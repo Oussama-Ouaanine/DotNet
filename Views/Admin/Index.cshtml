@@ -1,0 +1,53 @@
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<h1>Admin Dashboard</h1>
+
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-header">Total Books</div>
+            <div class="card-body">
+                <h2 class="card-title">@ViewBag.TotalBooks</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">Total Users</div>
+            <div class="card-body">
+                <h2 class="card-title">@ViewBag.TotalUsers</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-header">Pending Bookings</div>
+            <div class="card-body">
+                <h2 class="card-title">@ViewBag.PendingBookings</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-header">Active Bookings</div>
+            <div class="card-body">
+                <h2 class="card-title">@ViewBag.ActiveBookings</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h3>Quick Actions</h3>
+        <a asp-action="Books" class="btn btn-primary">Manage Books</a>
+        <a asp-action="Categories" class="btn btn-success">Manage Categories</a>
+        <a asp-action="Bookings" class="btn btn-warning">View Bookings</a>
+        <a asp-action="Clients" class="btn btn-info">View Clients</a>
+    </div>
+</div>
