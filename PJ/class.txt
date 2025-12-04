@@ -1,0 +1,86 @@
+/' ===================================
+   CLASS DIAGRAM
+   =================================== '/
+
+@startuml Class_Library
+
+class User {
+  - userId: int
+  - username: string
+  - password: string
+  - email: string
+  - role: string
+  - registrationDate: datetime
+  + login(): void
+  + logout(): void
+  + updateProfile(): void
+}
+
+class Admin {
+  - adminLevel: string
+  + addBook(): void
+  + updateBook(): void
+  + deleteBook(): void
+  + viewAllBookings(): void
+  + approveBooking(): void
+  + declineBooking(): void
+  + viewAllClients(): void
+  + manageBookStatus(): void
+}
+
+class Client {
+  - phoneNumber: string
+  - address: string
+  + browseBooks(): void
+  + searchBooks(): void
+  + bookABook(): void
+  + viewMyBookings(): void
+  + trackBookingStatus(): void
+}
+
+class Book {
+  - bookId: int
+  - title: string
+  - author: string
+  - category: string
+  - ISBN: string
+  - publicationYear: int
+  - description: string
+  - status: string
+  - availableCopies: int
+  + getDetails(): void
+  + updateStatus(): void
+  + checkAvailability(): boolean
+}
+
+class Booking {
+  - bookingId: int
+  - userId: int
+  - bookId: int
+  - bookingDate: datetime
+  - dueDate: datetime
+  - returnDate: datetime
+  - status: string
+  + createBooking(): void
+  + updateStatus(): void
+  + cancelBooking(): void
+  + calculateLateFee(): float
+}
+
+class Category {
+  - categoryId: int
+  - categoryName: string
+  - description: string
+  + addCategory(): void
+  + updateCategory(): void
+}
+
+' Relationships
+User <|-- Admin
+User <|-- Client
+Client "1" --> "*" Booking : makes
+Admin "1" --> "*" Booking : manages
+Booking "*" --> "1" Book : for
+Book "*" --> "1" Category : belongs to
+
+@enduml
