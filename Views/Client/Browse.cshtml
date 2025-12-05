@@ -1,50 +1,49 @@
-@model IEnumerable<LibraryWebApp.Models.Book>
-
+@model LibraryWebApp.Models.ViewModels.Client.ClientBrowseViewModel
 @{
-    ViewData["Title"] = "Browse Books";
+    ViewData["Title"] = "Browse";
 }
 
-<h1>Browse All Books</h1>
+<section class="section-width" style="padding: 4rem 0 2rem;">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <small>Collections</small>
+            <h1 style="margin: 0.5rem 0 0;">Browse by theme</h1>
+        </div>
+        <a asp-action="Search" class="btn btn-outline-primary">Search titles</a>
+    </div>
 
-<div class="row">
-    @foreach (var book in Model)
-    {
-        <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                @if (!string.IsNullOrEmpty(book.ImagePath))
-                {
-                    <img src="@book.ImagePath" class="card-img-top" alt="@book.Title cover" style="height: 300px; object-fit: cover;" />
-                }
-                else
-                {
-                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 300px;">
-                        <span class="text-white">No Cover Image</span>
+    <div class="d-grid gap-4">
+        @foreach (var collection in Model.Sections)
+        {
+            <div class="card" style="padding: 2.5rem;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <strong>@collection.Category.Icon @collection.Category.Name</strong>
+                        <p style="margin: 0; color: var(--text-tertiary);">@collection.Category.Description</p>
                     </div>
-                }
-                <div class="card-body">
-                    <h5 class="card-title">@book.Title</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">by @book.Author</h6>
-                    <p class="card-text">
-                        <strong>Category:</strong> @book.Category<br />
-                        <strong>ISBN:</strong> @book.ISBN<br />
-                        <strong>Year:</strong> @book.PublicationYear<br />
-                        <strong>Available:</strong> @book.AvailableCopies / @book.TotalCopies
-                    </p>
                 </div>
-                <div class="card-footer">
-                    <a asp-action="BookDetails" asp-route-id="@book.Id" class="btn btn-sm btn-info">Details</a>
-                    @if (book.AvailableCopies > 0)
+                <div class="row g-4">
+                    @foreach (var book in collection.Books)
                     {
-                        <form method="post" asp-action="BookABook" asp-route-id="@book.Id" style="display:inline;">
-                            <button type="submit" class="btn btn-sm btn-success">Book Now</button>
-                        </form>
-                    }
-                    else
-                    {
-                        <button class="btn btn-sm btn-secondary" disabled>Unavailable</button>
+                        <div class="col-md-4">
+                            <div class="card" style="padding: 1.5rem; height: 100%;">
+                                <strong>@book.Title</strong>
+                                <p style="margin: 0.5rem 0;">@book.Author</p>
+                                <small>@book.CategoryName</small>
+                                <div class="d-flex gap-2 mt-3">
+                                    <a asp-action="BookDetails" asp-route-id="@book.Id" class="btn btn-outline-primary btn-sm">Details</a>
+                                    <form asp-action="Reserve" method="post" asp-route-id="@book.Id">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-primary btn-sm" @(book.IsAvailable ? string.Empty : "disabled")>
+                                            @(book.IsAvailable ? "Reserve" : "Reserved")
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     }
                 </div>
             </div>
-        </div>
-    }
-</div>
+        }
+    </div>
+</section>

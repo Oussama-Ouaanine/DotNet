@@ -1,64 +1,104 @@
-@model IEnumerable<LibraryWebApp.Models.Book>
-
+@model LibraryWebApp.Models.ViewModels.Admin.AdminBooksViewModel
+@using System.Linq
 @{
-    ViewData["Title"] = "Manage Books";
+    ViewData["Title"] = "Catalogue";
 }
 
-<h1>Manage Books</h1>
+<section class="section-width" style="padding: 4rem 0 2rem;">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <small>Catalogue</small>
+            <h1 style="margin: 0.5rem 0 0;">Manage titles</h1>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="CreateBook" class="btn btn-primary">Add new book</a>
+        </div>
+    </div>
 
-<p>
-    <a asp-action="CreateBook" class="btn btn-primary">Add New Book</a>
-</p>
+    @if (TempData["StatusMessage"] is string statusMessage)
+    {
+        <div class="alert alert-success">@statusMessage</div>
+    }
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Cover</th>
-            <th>Title</th>
-            <th>Author</th>
-            <th>Category</th>
-            <th>ISBN</th>
-            <th>Available Copies</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var book in Model)
-        {
-            <tr>
-                <td>
-                    @if (!string.IsNullOrEmpty(book.ImagePath))
+    <form method="get" class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <input type="text" name="search" value="@Model.SearchTerm" placeholder="Search by title or author" class="form-control" />
+            </div>
+            <div class="col-lg-4">
+                <select name="category" class="form-select">
+                    <option value="all">All categories</option>
+                    @foreach (var category in Model.Categories)
                     {
-                        <img src="@book.ImagePath" alt="@book.Title cover" class="img-thumbnail" style="max-width: 50px; max-height: 75px;" />
+                        <option value="@category.Id" selected="@(category.Id == Model.CategoryFilter)">@category.Name</option>
                     }
-                    else
+                </select>
+            </div>
+            <div class="col-lg-2 d-grid">
+                <button type="submit" class="btn btn-outline-primary">Filter</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 36%;">Title</th>
+                    <th>Author</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Books.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-4">No titles match your filters yet.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var book in Model.Books)
                     {
-                        <span class="text-muted">No image</span>
+                        <tr>
+                            <td>
+                                <div class="d-flex gap-3 align-items-center">
+                                    <div style="width: 48px; height: 70px; border-radius: 12px; overflow: hidden; background: var(--surface-muted);">
+                                        <img src="@(string.IsNullOrWhiteSpace(book.CoverImagePath) ? "https://images.unsplash.com/photo-1528109086351-0b07c1145f35?auto=format&fit=crop&w=120&q=80" : book.CoverImagePath)" alt="@book.Title cover" style="width: 100%; height: 100%; object-fit: cover;" />
+                                    </div>
+                                    <div>
+                                        <strong>@book.Title</strong>
+                                        <p style="margin: 0; color: var(--text-tertiary);">Published @book.PublishedOn.Year</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@book.Author</td>
+                            <td>@book.CategoryName</td>
+                            <td>
+                                @if (book.IsAvailable)
+                                {
+                                    <span class="badge bg-dark">Available</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Reserved</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a asp-action="EditBook" asp-route-id="@book.Id" class="btn btn-outline-primary btn-sm">Edit</a>
+                                    <form asp-action="DeleteBook" asp-route-id="@book.Id" method="post" onsubmit="return confirm('Remove this title?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
                     }
-                </td>
-                <td>@book.Title</td>
-                <td>@book.Author</td>
-                <td>@book.Category</td>
-                <td>@book.ISBN</td>
-                <td>@book.AvailableCopies / @book.TotalCopies</td>
-                <td>
-                    @if (book.AvailableCopies > 0)
-                    {
-                        <span class="badge bg-success">Available</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-danger">Unavailable</span>
-                    }
-                </td>
-                <td>
-                    <a asp-action="EditBook" asp-route-id="@book.Id" class="btn btn-sm btn-warning">Edit</a>
-                    <form method="post" asp-action="DeleteBook" asp-route-id="@book.Id" style="display:inline;">
-                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this book?')">Delete</button>
-                    </form>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

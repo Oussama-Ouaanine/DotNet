@@ -1,0 +1,187 @@
+@model IEnumerable<LibraryWebApp.Models.Booking>
+@using System.Linq
+@{
+    ViewData["Title"] = "Booking History";
+    var statusFilter = ViewBag.StatusFilter as string;
+    var searchQuery = ViewBag.SearchQuery as string;
+    var overdueCount = ViewBag.OverdueCount as int? ?? 0;
+    var overdueBookings = ViewBag.OverdueBookings as IEnumerable<LibraryWebApp.Models.Booking> ?? Enumerable.Empty<LibraryWebApp.Models.Booking>();
+}
+
+<section class="section-width" style="padding: 4rem 0 2rem;">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <small>Reports</small>
+            <h1 style="margin: 0.5rem 0 0;">Booking History</h1>
+        </div>
+    </div>
+
+    @if (overdueCount > 0)
+    {
+        <div class="alert alert-warning" role="alert">
+            <strong>⚠️ @overdueCount Overdue Booking(s)</strong>
+            <ul class="mb-0 mt-2">
+                @foreach (var booking in overdueBookings.Take(5))
+                {
+                    var daysOverdue = (DateTime.UtcNow - booking.DueDate!.Value).Days;
+                    <li>
+                        <strong>@booking.BookTitle</strong> borrowed by @booking.Username 
+                        — <span class="text-danger">@daysOverdue days overdue</span>
+                        (Due: @booking.DueDate?.ToLocalTime().ToString("dd MMM yyyy"))
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <form method="get" asp-action="History" class="p-3">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Filter by Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="@BookingStatus.Pending" selected="@(statusFilter == BookingStatus.Pending)">Pending</option>
+                        <option value="@BookingStatus.Approved" selected="@(statusFilter == BookingStatus.Approved)">Approved</option>
+                        <option value="@BookingStatus.Completed" selected="@(statusFilter == BookingStatus.Completed)">Completed</option>
+                        <option value="@BookingStatus.Refused" selected="@(statusFilter == BookingStatus.Refused)">Refused</option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">Search</label>
+                    <input type="text" name="search" class="form-control" placeholder="Book title or member name..." value="@searchQuery" />
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Book Title</th>
+                        <th>Member</th>
+                        <th>Reserved On</th>
+                        <th>Approved On</th>
+                        <th>Due Date</th>
+                        <th>Returned On</th>
+                        <th>Status</th>
+                        <th>Days Borrowed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                No bookings found matching your criteria.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var booking in Model)
+                        {
+                            var statusClass = booking.Status switch
+                            {
+                                BookingStatus.Pending => "badge bg-warning text-dark",
+                                BookingStatus.Approved => "badge bg-dark",
+                                BookingStatus.Completed => "badge bg-secondary",
+                                BookingStatus.Refused => "badge bg-danger",
+                                _ => "badge bg-light text-dark"
+                            };
+
+                            var daysBorrowed = booking.Status == BookingStatus.Approved && booking.ApprovedAt.HasValue
+                                ? (DateTime.UtcNow - booking.ApprovedAt.Value).Days
+                                : booking.ReturnedAt.HasValue && booking.ApprovedAt.HasValue
+                                    ? (booking.ReturnedAt.Value - booking.ApprovedAt.Value).Days
+                                    : (int?)null;
+
+                            var isOverdue = booking.Status == BookingStatus.Approved && 
+                                          booking.DueDate.HasValue && 
+                                          booking.DueDate.Value < DateTime.UtcNow;
+
+                            <tr class="@(isOverdue ? "table-warning" : "")">
+                                <td>
+                                    <strong>@booking.BookTitle</strong>
+                                    @if (isOverdue)
+                                    {
+                                        <br/><small class="text-danger">⚠️ Overdue</small>
+                                    }
+                                </td>
+                                <td>@booking.Username</td>
+                                <td>@booking.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</td>
+                                <td>@(booking.ApprovedAt?.ToLocalTime().ToString("dd MMM yyyy, HH:mm") ?? "—")</td>
+                                <td>
+                                    @if (booking.DueDate.HasValue)
+                                    {
+                                        @booking.DueDate.Value.ToLocalTime().ToString("dd MMM yyyy")
+                                        if (isOverdue)
+                                        {
+                                            var daysOverdue = (DateTime.UtcNow - booking.DueDate.Value).Days;
+                                            <br/><small class="text-danger fw-bold">+@daysOverdue days late</small>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span>—</span>
+                                    }
+                                </td>
+                                <td>@(booking.ReturnedAt?.ToLocalTime().ToString("dd MMM yyyy, HH:mm") ?? "—")</td>
+                                <td><span class="@statusClass">@booking.Status</span></td>
+                                <td>
+                                    @if (daysBorrowed.HasValue)
+                                    {
+                                        <span>@daysBorrowed days</span>
+                                    }
+                                    else
+                                    {
+                                        <span>—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Summary Statistics</h5>
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <h3 class="text-primary">@Model.Count()</h3>
+                            <small class="text-muted">Total Records</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <h3 class="text-warning">@Model.Count(b => b.Status == BookingStatus.Pending)</h3>
+                            <small class="text-muted">Pending</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <h3 class="text-dark">@Model.Count(b => b.Status == BookingStatus.Approved)</h3>
+                            <small class="text-muted">Currently Borrowed</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <h3 class="text-secondary">@Model.Count(b => b.Status == BookingStatus.Completed)</h3>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

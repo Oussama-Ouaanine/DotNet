@@ -1,138 +1,96 @@
 @model IEnumerable<LibraryWebApp.Models.Booking>
-
+@using System.Linq
 @{
-    ViewData["Title"] = "Manage Bookings";
+    ViewData["Title"] = "Reservations";
 }
 
-<h1>Manage Bookings</h1>
+<section class="section-width" style="padding: 4rem 0 2rem;">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <small>Reservations</small>
+            <h1 style="margin: 0.5rem 0 0;">Live activity</h1>
+        </div>
+        <a asp-action="History" class="btn btn-outline-primary">View Full History</a>
+    </div>
 
-<ul class="nav nav-tabs mb-3">
-    <li class="nav-item">
-        <a class="nav-link active" data-bs-toggle="tab" href="#pending">Pending</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#active">Active</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#all">All</a>
-    </li>
-</ul>
+    @if (TempData["StatusMessage"] is string statusMessage)
+    {
+        var statusType = TempData["StatusType"] as string;
+        var alertClass = statusType == "error" ? "alert-danger" : "alert-success";
+        <div class="alert @alertClass" role="alert">@statusMessage</div>
+    }
 
-<div class="tab-content">
-    <div id="pending" class="tab-pane fade show active">
-        <table class="table table-striped">
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <table class="table mb-0">
             <thead>
                 <tr>
-                    <th>Booking ID</th>
-                    <th>User</th>
                     <th>Book</th>
-                    <th>Booking Date</th>
+                    <th>Member</th>
+                    <th>Reserved</th>
+                    <th>Due</th>
                     <th>Status</th>
-                    <th>Actions</th>
+                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var booking in Model.Where(b => b.Status == "Pending"))
+                @if (!Model.Any())
                 {
                     <tr>
-                        <td>@booking.BookingId</td>
-                        <td>@booking.Username</td>
-                        <td>@booking.BookTitle</td>
-                        <td>@booking.BookingDate.ToString("dd/MM/yyyy")</td>
-                        <td><span class="badge bg-warning">@booking.Status</span></td>
-                        <td>
-                            <form method="post" asp-action="ApproveBooking" asp-route-id="@booking.Id" style="display:inline;">
-                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                            </form>
-                            <form method="post" asp-action="DeclineBooking" asp-route-id="@booking.Id" style="display:inline;">
-                                <button type="submit" class="btn btn-sm btn-danger">Decline</button>
-                            </form>
-                        </td>
+                        <td colspan="6" class="text-center py-4">No reservations yet.</td>
                     </tr>
+                }
+                else
+                {
+                    foreach (var booking in Model)
+                    {
+                        var statusClass = booking.Status switch
+                        {
+                            BookingStatus.Pending => "badge bg-warning text-dark",
+                            BookingStatus.Approved => "badge bg-dark",
+                            BookingStatus.Completed => "badge bg-secondary",
+                            BookingStatus.Refused => "badge bg-danger",
+                            _ => "badge bg-light text-dark"
+                        };
+                        <tr>
+                            <td>@booking.BookTitle</td>
+                            <td>@booking.Username</td>
+                            <td>@booking.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+                            <td>@(booking.DueDate?.ToLocalTime().ToString("dd MMM yyyy") ?? "—")</td>
+                            <td><span class="@statusClass">@booking.Status</span></td>
+                            <td class="text-end">
+                                @if (booking.Status == BookingStatus.Pending)
+                                {
+                                    <div class="d-flex flex-column flex-lg-row gap-2 justify-content-end align-items-lg-center">
+                                        <form asp-action="ApproveBooking" method="post" class="d-flex gap-2 align-items-center flex-wrap justify-content-end">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@booking.Id" />
+                                            <input type="date" name="dueDate" class="form-control form-control-sm" required min="@DateTime.UtcNow.ToString("yyyy-MM-dd")" style="width: 180px;" />
+                                            <button type="submit" class="btn btn-primary btn-sm">Approve</button>
+                                        </form>
+                                        <form asp-action="RefuseBooking" method="post" onsubmit="return confirm('Decline this reservation request?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@booking.Id" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">Refuse</button>
+                                        </form>
+                                    </div>
+                                }
+                                else if (booking.Status == BookingStatus.Approved)
+                                {
+                                    <form asp-action="CompleteBooking" method="post" class="d-inline" onsubmit="return confirm('Mark this booking as returned?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@booking.Id" />
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm">Mark returned</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                        </tr>
+                    }
                 }
             </tbody>
         </table>
     </div>
-    
-    <div id="active" class="tab-pane fade">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Booking ID</th>
-                    <th>User</th>
-                    <th>Book</th>
-                    <th>Due Date</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var booking in Model.Where(b => b.Status == "Active" || b.Status == "Overdue"))
-                {
-                    <tr>
-                        <td>@booking.BookingId</td>
-                        <td>@booking.Username</td>
-                        <td>@booking.BookTitle</td>
-                        <td>@booking.DueDate.ToString("dd/MM/yyyy")</td>
-                        <td>
-                            @if (booking.Status == "Overdue")
-                            {
-                                <span class="badge bg-danger">@booking.Status</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-info">@booking.Status</span>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-    
-    <div id="all" class="tab-pane fade">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Booking ID</th>
-                    <th>User</th>
-                    <th>Book</th>
-                    <th>Booking Date</th>
-                    <th>Due Date</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var booking in Model)
-                {
-                    <tr>
-                        <td>@booking.BookingId</td>
-                        <td>@booking.Username</td>
-                        <td>@booking.BookTitle</td>
-                        <td>@booking.BookingDate.ToString("dd/MM/yyyy")</td>
-                        <td>@booking.DueDate.ToString("dd/MM/yyyy")</td>
-                        <td>
-                            @switch (booking.Status)
-                            {
-                                case "Pending":
-                                    <span class="badge bg-warning">@booking.Status</span>
-                                    break;
-                                case "Active":
-                                    <span class="badge bg-info">@booking.Status</span>
-                                    break;
-                                case "Declined":
-                                    <span class="badge bg-danger">@booking.Status</span>
-                                    break;
-                                case "Returned":
-                                    <span class="badge bg-success">@booking.Status</span>
-                                    break;
-                                case "Overdue":
-                                    <span class="badge bg-danger">@booking.Status</span>
-                                    break;
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-</div>
+</section>

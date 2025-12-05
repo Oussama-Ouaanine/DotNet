@@ -1,62 +1,53 @@
-@model IEnumerable<LibraryWebApp.Models.Book>
-
+@model LibraryWebApp.Models.ViewModels.Client.SearchResultsViewModel
 @{
-    ViewData["Title"] = "Search Books";
+    ViewData["Title"] = "Search";
 }
 
-<h1>Search Books</h1>
-
-<div class="row mb-4">
-    <div class="col-md-12">
-        <form method="get" asp-action="Search">
-            <div class="input-group">
-                <input type="text" name="searchTerm" class="form-control" value="@ViewBag.SearchTerm" placeholder="Search by title, author, or ISBN" />
-                <button type="submit" class="btn btn-primary">Search</button>
-            </div>
-        </form>
+<section class="section-width" style="padding: 4rem 0 2rem;">
+    <div class="mb-4">
+        <small>Search</small>
+        <h1 style="margin: 0.5rem 0 0;">Find your next book</h1>
     </div>
-</div>
 
-@if (ViewBag.SearchTerm != null)
-{
-    <h3>Search Results for "@ViewBag.SearchTerm"</h3>
-    
-    @if (!Model.Any())
-    {
-        <div class="alert alert-info">No books found matching your search criteria.</div>
-    }
-    else
-    {
-        <div class="row">
-            @foreach (var book in Model)
-            {
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">@book.Title</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">by @book.Author</h6>
-                            <p class="card-text">
-                                <strong>Category:</strong> @book.Category<br />
-                                <strong>ISBN:</strong> @book.ISBN<br />
-                                <strong>Available:</strong> @book.AvailableCopies / @book.TotalCopies
-                            </p>
-                        </div>
-                        <div class="card-footer">
-                            <a asp-action="BookDetails" asp-route-id="@book.Id" class="btn btn-sm btn-info">Details</a>
-                            @if (book.AvailableCopies > 0)
-                            {
-                                <form method="post" asp-action="BookABook" asp-route-id="@book.Id" style="display:inline;">
-                                    <button type="submit" class="btn btn-sm btn-success">Book Now</button>
+    <form method="get" class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+        <div class="row g-3 align-items-center">
+            <div class="col-lg-10">
+                <input type="text" name="query" value="@Model.Query" class="form-control" placeholder="Search by title, author, or theme" />
+            </div>
+            <div class="col-lg-2 d-grid">
+                <button class="btn btn-primary" type="submit">Search</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="card" style="padding: 2.5rem;">
+        @if (!Model.HasResults)
+        {
+            <p style="margin: 0;">No results yet. Try searching for "Design", "Leadership", or "Science".</p>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var book in Model.Results)
+                {
+                    <div class="col-md-4">
+                        <div class="card" style="padding: 1.5rem; height: 100%;">
+                            <strong>@book.Title</strong>
+                            <p style="margin: 0.5rem 0;">@book.Author</p>
+                            <small>@book.CategoryName</small>
+                            <div class="d-flex gap-2 mt-3">
+                                <a asp-action="BookDetails" asp-route-id="@book.Id" class="btn btn-outline-primary btn-sm">Details</a>
+                                <form asp-action="Reserve" method="post" asp-route-id="@book.Id">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-primary btn-sm" @(book.IsAvailable ? string.Empty : "disabled")>
+                                        @(book.IsAvailable ? "Reserve" : "Reserved")
+                                    </button>
                                 </form>
-                            }
-                            else
-                            {
-                                <button class="btn btn-sm btn-secondary" disabled>Unavailable</button>
-                            }
+                            </div>
                         </div>
                     </div>
-                </div>
-            }
-        </div>
-    }
-}
+                }
+            </div>
+        }
+    </div>
+</section>

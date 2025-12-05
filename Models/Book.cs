@@ -1,56 +1,19 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-using System.ComponentModel.DataAnnotations;
+using System;
 
-namespace LibraryWebApp.Models
+namespace LibraryWebApp.Models;
+
+public class Book
 {
-    public class Book
-    {
-        [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string? Id { get; set; }
-
-        [BsonElement("bookId")]
-        public int BookId { get; set; }
-
-        [Required(ErrorMessage = "Title is required")]
-        [BsonElement("title")]
-        public string Title { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Author is required")]
-        [BsonElement("author")]
-        public string Author { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Category is required")]
-        [BsonElement("category")]
-        public string Category { get; set; } = string.Empty;
-
-        [BsonElement("categoryId")]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string? CategoryId { get; set; }
-
-        [Required(ErrorMessage = "ISBN is required")]
-        [BsonElement("ISBN")]
-        public string ISBN { get; set; } = string.Empty;
-
-        [Required]
-        [BsonElement("publicationYear")]
-        public int PublicationYear { get; set; }
-
-        [BsonElement("description")]
-        public string Description { get; set; } = string.Empty;
-
-        [BsonElement("status")]
-        public string Status { get; set; } = "Available"; // Available, Borrowed, Reserved
-
-        [Required]
-        [BsonElement("availableCopies")]
-        public int AvailableCopies { get; set; }
-
-        [BsonElement("totalCopies")]
-        public int TotalCopies { get; set; }
-
-        [BsonElement("imagePath")]
-        public string? ImagePath { get; set; } // Path to book cover image
-    }
+	public string Id { get; set; } = Guid.NewGuid().ToString();
+	public string Title { get; set; } = string.Empty;
+	public string Author { get; set; } = string.Empty;
+	public string CategoryId { get; set; } = string.Empty;
+	public string CategoryName { get; set; } = string.Empty;
+	public string Description { get; set; } = string.Empty;
+	public string? CoverImagePath { get; set; }
+	public bool IsAvailable { get; set; } = true;
+	public DateTime PublishedOn { get; set; } = DateTime.UtcNow;
+	public double Rating { get; set; } = 4.5;
+	public int Pages { get; set; } = 320;
+	public bool IsFeatured { get; set; }
 }

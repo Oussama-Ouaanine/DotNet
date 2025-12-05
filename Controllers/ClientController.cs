@@ -1,144 +1,154 @@
-using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Linq;
 using LibraryWebApp.Models;
+using LibraryWebApp.Models.ViewModels.Client;
 using LibraryWebApp.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
-namespace LibraryWebApp.Controllers
+namespace LibraryWebApp.Controllers;
+
+public class ClientController : Controller
 {
-    public class ClientController : Controller
-    {
-        private readonly BookService _bookService;
-        private readonly BookingService _bookingService;
-        private readonly UserService _userService;
+	private readonly BookService _bookService;
+	private readonly CategoryService _categoryService;
+	private readonly BookingService _bookingService;
+	private readonly UserService _userService;
 
-        public ClientController(BookService bookService, BookingService bookingService, UserService userService)
-        {
-            _bookService = bookService;
-            _bookingService = bookingService;
-            _userService = userService;
-        }
+	public ClientController(
+		BookService bookService,
+		CategoryService categoryService,
+		BookingService bookingService,
+		UserService userService)
+	{
+		_bookService = bookService;
+		_categoryService = categoryService;
+		_bookingService = bookingService;
+		_userService = userService;
+	}
 
-        private bool IsClient()
-        {
-            var role = HttpContext.Session.GetString("Role");
-            return role == "Client";
-        }
+	public IActionResult Index()
+	{
+		var model = new ClientHomeViewModel
+		{
+			FeaturedBooks = _bookService.GetFeatured(6),
+			TrendingBooks = _bookService.GetAll().Take(6),
+			HighlightedCategories = _categoryService.GetAll().Take(3)
+		};
 
-        private int GetUserId()
-        {
-            return HttpContext.Session.GetInt32("UserIdInt") ?? 0;
-        }
+		return View(model);
+	}
 
-        // GET: Client/Index
-        public async Task<IActionResult> Index()
-        {
-            if (!IsClient()) return RedirectToAction("Login", "Account");
+	public IActionResult Browse()
+	{
+		var sections = _categoryService.GetAll()
+			.Select(category => new CategoryBrowseSection
+			{
+				Category = category,
+				Books = _bookService.GetByCategory(category.Id).Take(6)
+			});
 
-            var books = await _bookService.GetAvailableBooksAsync();
-            return View(books);
-        }
+		var model = new ClientBrowseViewModel { Sections = sections };
+		return View(model);
+	}
 
-        // GET: Client/Browse
-        public async Task<IActionResult> Browse(string category = "")
-        {
-            if (!IsClient()) return RedirectToAction("Login", "Account");
+	public IActionResult BookDetails(string id)
+	{
+		var book = _bookService.GetById(id);
+		if (book is null)
+		{
+			return RedirectToAction(nameof(Browse));
+		}
 
-            List<Book> books;
-            if (string.IsNullOrEmpty(category))
-            {
-                books = await _bookService.GetAllAsync();
-            }
-            else
-            {
-                books = await _bookService.GetByCategoryAsync(category);
-            }
+		var related = _bookService
+			.GetByCategory(book.CategoryId)
+			.Where(b => b.Id != book.Id)
+			.Take(4);
 
-            return View(books);
-        }
+		var model = new BookDetailsViewModel
+		{
+			Book = book,
+			RelatedBooks = related
+		};
 
-        // GET: Client/Search
-        public async Task<IActionResult> Search(string searchTerm)
-        {
-            if (!IsClient()) return RedirectToAction("Login", "Account");
+		return View(model);
+	}
 
-            if (string.IsNullOrEmpty(searchTerm))
-            {
-                return View(new List<Book>());
-            }
+	[HttpGet]
+	public IActionResult Search(string? query)
+	{
+		var results = string.IsNullOrWhiteSpace(query)
+			? Enumerable.Empty<Models.Book>()
+			: _bookService.Search(query);
 
-            var books = await _bookService.SearchBooksAsync(searchTerm);
-            ViewBag.SearchTerm = searchTerm;
-            return View(books);
-        }
+		var model = new SearchResultsViewModel
+		{
+			Query = query ?? string.Empty,
+			Results = results.ToList()
+		};
 
-        // GET: Client/BookDetails/5
-        public async Task<IActionResult> BookDetails(string id)
-        {
-            if (!IsClient()) return RedirectToAction("Login", "Account");
+		return View(model);
+	}
 
-            var book = await _bookService.GetByIdAsync(id);
-            if (book == null) return NotFound();
+	[HttpPost]
+	[ValidateAntiForgeryToken]
+	public IActionResult Reserve(string id)
+	{
+		var gate = EnsureSignedIn();
+		if (gate is not null) return gate;
 
-            return View(book);
-        }
+		var userId = HttpContext.Session.GetString("UserId")!;
+		var user = _userService.GetById(userId);
+		var book = _bookService.GetById(id);
 
-        // POST: Client/BookABook/5
-        [HttpPost]
-        public async Task<IActionResult> BookABook(string id)
-        {
-            if (!IsClient()) return RedirectToAction("Login", "Account");
+		if (user is null || book is null)
+		{
+			TempData["StatusMessage"] = "Unable to reserve this title right now.";
+			return RedirectToAction(nameof(Browse));
+		}
 
-            var book = await _bookService.GetByIdAsync(id);
-            if (book == null || book.AvailableCopies <= 0)
-            {
-                TempData["Error"] = "Book is not available";
-                return RedirectToAction("Index");
-            }
+		try
+		{
+			_bookingService.ReserveBook(user, book);
+			TempData["StatusMessage"] = "Request submitted. An administrator will review your reservation.";
+			TempData["StatusType"] = "success";
+		}
+		catch (InvalidOperationException ex)
+		{
+			TempData["StatusMessage"] = ex.Message;
+			TempData["StatusType"] = "error";
+			return RedirectToAction("BookDetails", new { id });
+		}
 
-            var userId = GetUserId();
-            var userIdString = HttpContext.Session.GetString("UserId");
-            var username = HttpContext.Session.GetString("Username");
+		return RedirectToAction(nameof(MyBookings));
+	}
 
-            var booking = new Booking
-            {
-                UserId = userId,
-                UserObjectId = userIdString,
-                Username = username ?? "",
-                BookId = book.BookId,
-                BookObjectId = id,
-                BookTitle = book.Title,
-                BookingDate = DateTime.Now,
-                Status = "Pending"
-            };
+	public IActionResult MyBookings()
+	{
+		var gate = EnsureSignedIn();
+		if (gate is not null) return gate;
 
-            await _bookingService.CreateAsync(booking);
-            TempData["Success"] = "Booking request submitted successfully";
-            return RedirectToAction("MyBookings");
-        }
+		var userId = HttpContext.Session.GetString("UserId")!;
+		var bookings = _bookingService.GetForUser(userId);
 
-        // GET: Client/MyBookings
-        public async Task<IActionResult> MyBookings()
-        {
-            if (!IsClient()) return RedirectToAction("Login", "Account");
+		var model = new MyBookingsViewModel
+		{
+			Pending = bookings.Where(b => b.Status == BookingStatus.Pending),
+			Approved = bookings.Where(b => b.Status == BookingStatus.Approved),
+			History = bookings.Where(b => b.Status == BookingStatus.Completed || b.Status == BookingStatus.Refused)
+		};
 
-            var userId = GetUserId();
-            var bookings = await _bookingService.GetByUserIdAsync(userId);
-            return View(bookings);
-        }
+		return View(model);
+	}
 
-        // POST: Client/CancelBooking/5
-        [HttpPost]
-        public async Task<IActionResult> CancelBooking(string id)
-        {
-            if (!IsClient()) return RedirectToAction("Login", "Account");
+	private IActionResult? EnsureSignedIn()
+	{
+		var username = HttpContext.Session.GetString("Username");
+		if (string.IsNullOrWhiteSpace(username))
+		{
+			return RedirectToAction("Login", "Account", new { returnUrl = Request.Path });
+		}
 
-            var booking = await _bookingService.GetByIdAsync(id);
-            if (booking != null && booking.Status == "Pending")
-            {
-                await _bookingService.DeleteAsync(id);
-                TempData["Success"] = "Booking cancelled successfully";
-            }
-
-            return RedirectToAction("MyBookings");
-        }
-    }
+		return null;
+	}
 }

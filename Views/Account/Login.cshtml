@@ -1,36 +1,44 @@
+@model LibraryWebApp.Models.ViewModels.Account.LoginInputModel
 @{
-    ViewData["Title"] = "Login";
+    ViewData["Title"] = "Sign in";
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h2>Login</h2>
-            </div>
-            <div class="card-body">
-                @if (ViewBag.Error != null)
-                {
-                    <div class="alert alert-danger">@ViewBag.Error</div>
-                }
-                
-                <form method="post" asp-action="Login">
+<section class="section-width" style="padding: 6rem 0 4rem;">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card" style="padding: 2.5rem;">
+                <h2 style="margin-bottom: 0.75rem;">Welcome back</h2>
+                <p style="margin-bottom: 2.5rem;">Sign in to manage your reservations and pick up where you left off.</p>
+
+                <form asp-action="Login" method="post">
                     @Html.AntiForgeryToken()
-                    
                     <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" required />
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" class="form-control" autocomplete="email" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
                     </div>
-                    
                     <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required />
+                        <label asp-for="Password" class="form-label"></label>
+                        <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                        <span asp-validation-for="Password" class="text-danger"></span>
                     </div>
-                    
-                    <button type="submit" class="btn btn-primary">Login</button>
-                    <a asp-action="Register" class="btn btn-link">Don't have an account? Register here</a>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="form-check">
+                            <input asp-for="RememberMe" class="form-check-input" />
+                            <label asp-for="RememberMe" class="form-check-label"></label>
+                        </div>
+                        <a class="btn btn-link-style" href="#">Forgot password?</a>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Sign in</button>
                 </form>
+
+                <hr style="margin: 2.5rem 0;" />
+                <p class="text-center text-muted mb-0">New to Lumen Library? <a asp-action="Register">Create an account</a>.</p>
             </div>
         </div>
     </div>
-</div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

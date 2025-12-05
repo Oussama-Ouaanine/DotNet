@@ -1,29 +1,23 @@
-using LibraryWebApp.Models;
 using LibraryWebApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure MongoDB settings
-builder.Services.Configure<DatabaseSettings>(
-    builder.Configuration.GetSection("DatabaseSettings"));
+// Add services to the container.
+builder.Services.AddControllersWithViews();
 
-// Register services
-builder.Services.AddSingleton<MongoDbService>();
-builder.Services.AddSingleton<UserService>();
-builder.Services.AddSingleton<BookService>();
 builder.Services.AddSingleton<CategoryService>();
+builder.Services.AddSingleton<BookService>();
+builder.Services.AddSingleton<UserService>();
 builder.Services.AddSingleton<BookingService>();
 
-// Add session support for authentication
+// Add session support
+builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
-
-// Add services to the container.
-builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
@@ -40,7 +34,9 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// Enable session middleware
 app.UseSession();
+
 app.UseAuthorization();
 
 app.MapControllerRoute(

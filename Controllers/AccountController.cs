@@ -1,105 +1,95 @@
-using Microsoft.AspNetCore.Mvc;
-using LibraryWebApp.Models;
+using LibraryWebApp.Models.ViewModels.Account;
 using LibraryWebApp.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
-namespace LibraryWebApp.Controllers
+namespace LibraryWebApp.Controllers;
+
+public class AccountController : Controller
 {
-    public class AccountController : Controller
-    {
-        private readonly UserService _userService;
+	private readonly UserService _userService;
 
-        public AccountController(UserService userService)
-        {
-            _userService = userService;
-        }
+	public AccountController(UserService userService)
+	{
+		_userService = userService;
+	}
 
-        // GET: Account/Login
-        public IActionResult Login()
-        {
-            return View();
-        }
+	[HttpGet]
+	public IActionResult Login(string? returnUrl = null)
+	{
+		ViewData["ReturnUrl"] = returnUrl;
+		return View(new LoginInputModel());
+	}
 
-        // POST: Account/Login
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string username, string password)
-        {
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
-            {
-                ViewBag.Error = "Username and password are required";
-                return View();
-            }
+	[HttpPost]
+	[ValidateAntiForgeryToken]
+	public IActionResult Login(LoginInputModel model, string? returnUrl = null)
+	{
+		if (!ModelState.IsValid)
+		{
+			return View(model);
+		}
 
-            var user = await _userService.AuthenticateAsync(username, password);
-            
-            if (user == null)
-            {
-                ViewBag.Error = "Invalid username or password";
-                return View();
-            }
+		var user = _userService.ValidateCredentials(model.Email, model.Password);
+		if (user is null)
+		{
+			ModelState.AddModelError(string.Empty, "Invalid email or password.");
+			return View(model);
+		}
 
-            // Store user info in session
-            HttpContext.Session.SetString("UserId", user.Id!);
-            HttpContext.Session.SetString("Username", user.Username);
-            HttpContext.Session.SetString("Role", user.Role);
-            HttpContext.Session.SetInt32("UserIdInt", user.UserId);
+		HttpContext.Session.SetString("Username", user.FullName);
+		HttpContext.Session.SetString("Email", user.Email);
+		HttpContext.Session.SetString("Role", user.IsAdmin ? "Admin" : "Client");
+		HttpContext.Session.SetString("UserId", user.Id);
 
-            if (user.Role == "Admin")
-            {
-                return RedirectToAction("Index", "Admin");
-            }
-            else
-            {
-                return RedirectToAction("Index", "Client");
-            }
-        }
+		if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+		{
+			return Redirect(returnUrl);
+		}
 
-        // GET: Account/Register
-        public IActionResult Register()
-        {
-            return View();
-        }
+		return user.IsAdmin
+			? RedirectToAction("Index", "Admin")
+			: RedirectToAction("Index", "Client");
+	}
 
-        // POST: Account/Register
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(User user)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(user);
-            }
+	[HttpGet]
+	public IActionResult Register()
+	{
+		return View(new RegisterInputModel());
+	}
 
-            // Check if username already exists
-            var existingUser = await _userService.GetByUsernameAsync(user.Username);
-            if (existingUser != null)
-            {
-                ViewBag.Error = "Username already exists";
-                return View(user);
-            }
+	[HttpPost]
+	[ValidateAntiForgeryToken]
+	public IActionResult Register(RegisterInputModel model)
+	{
+		if (!ModelState.IsValid)
+		{
+			return View(model);
+		}
 
-            // Check if email already exists
-            var existingEmail = await _userService.GetByEmailAsync(user.Email);
-            if (existingEmail != null)
-            {
-                ViewBag.Error = "Email already exists";
-                return View(user);
-            }
+		try
+		{
+			var user = _userService.Register(model);
 
-            user.Role = "Client"; // Default role
-            user.RegistrationDate = DateTime.Now;
+			HttpContext.Session.SetString("Username", user.FullName);
+			HttpContext.Session.SetString("Email", user.Email);
+			HttpContext.Session.SetString("Role", "Client");
+			HttpContext.Session.SetString("UserId", user.Id);
 
-            await _userService.CreateAsync(user);
+			return RedirectToAction("Index", "Client");
+		}
+		catch (Exception ex)
+		{
+			ModelState.AddModelError(string.Empty, ex.Message);
+			return View(model);
+		}
+	}
 
-            ViewBag.Success = "Registration successful! Please login.";
-            return RedirectToAction("Login");
-        }
-
-        // GET: Account/Logout
-        public IActionResult Logout()
-        {
-            HttpContext.Session.Clear();
-            return RedirectToAction("Index", "Home");
-        }
-    }
+	[HttpPost]
+	[ValidateAntiForgeryToken]
+	public IActionResult Logout()
+	{
+		HttpContext.Session.Clear();
+		return RedirectToAction("Index", "Home");
+	}
 }

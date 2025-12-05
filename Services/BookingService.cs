@@ -1,116 +1,140 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using LibraryWebApp.Models;
-using MongoDB.Driver;
 
-namespace LibraryWebApp.Services
+namespace LibraryWebApp.Services;
+
+public class BookingService
 {
-    public class BookingService
-    {
-        private readonly IMongoCollection<Booking> _bookings;
-        private readonly BookService _bookService;
+	private readonly List<Booking> _bookings = new();
+	private readonly object _mutex = new();
+	private readonly BookService _bookService;
 
-        public BookingService(MongoDbService mongoDbService, BookService bookService)
-        {
-            _bookings = mongoDbService.Bookings;
-            _bookService = bookService;
-        }
+	public BookingService(BookService bookService)
+	{
+		_bookService = bookService;
+	}
 
-        public async Task<List<Booking>> GetAllAsync() =>
-            await _bookings.Find(_ => true).SortByDescending(b => b.BookingDate).ToListAsync();
+	public IEnumerable<Booking> GetAll() => _bookings.OrderByDescending(b => b.CreatedAt);
 
-        public async Task<Booking?> GetByIdAsync(string id) =>
-            await _bookings.Find(x => x.Id == id).FirstOrDefaultAsync();
+	public IEnumerable<Booking> GetRecent(int count = 5) => _bookings.OrderByDescending(b => b.CreatedAt).Take(count);
 
-        public async Task<List<Booking>> GetByUserIdAsync(int userId) =>
-            await _bookings.Find(x => x.UserId == userId).SortByDescending(b => b.BookingDate).ToListAsync();
+	public IEnumerable<Booking> GetForUser(string userId) =>
+		_bookings.Where(b => b.UserId.Equals(userId, StringComparison.OrdinalIgnoreCase))
+				 .OrderByDescending(b => b.CreatedAt);
 
-        public async Task<List<Booking>> GetPendingBookingsAsync() =>
-            await _bookings.Find(x => x.Status == "Pending").SortByDescending(b => b.BookingDate).ToListAsync();
+	public IEnumerable<Booking> GetHistory(string? status = null, string? search = null)
+	{
+		var query = _bookings.AsEnumerable();
 
-        public async Task<List<Booking>> GetActiveBookingsAsync() =>
-            await _bookings.Find(x => x.Status == "Active").ToListAsync();
+		// Filter by status
+		if (!string.IsNullOrWhiteSpace(status))
+		{
+			query = query.Where(b => b.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
+		}
 
-        public async Task CreateAsync(Booking booking)
-        {
-            var maxBookingId = await _bookings.Find(_ => true)
-                .SortByDescending(b => b.BookingId)
-                .Limit(1)
-                .FirstOrDefaultAsync();
-            
-            booking.BookingId = maxBookingId?.BookingId + 1 ?? 1;
-            booking.DueDate = booking.BookingDate.AddDays(14); // Default 14 days loan period
-            await _bookings.InsertOneAsync(booking);
-        }
+		// Search by book title or username
+		if (!string.IsNullOrWhiteSpace(search))
+		{
+			query = query.Where(b => 
+				b.BookTitle.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+				b.Username.Contains(search, StringComparison.OrdinalIgnoreCase));
+		}
 
-        public async Task UpdateAsync(string id, Booking booking) =>
-            await _bookings.ReplaceOneAsync(x => x.Id == id, booking);
+		return query.OrderByDescending(b => b.CreatedAt);
+	}
 
-        public async Task DeleteAsync(string id) =>
-            await _bookings.DeleteOneAsync(x => x.Id == id);
+	public IEnumerable<Booking> GetOverdueBookings()
+	{
+		return _bookings.Where(b => 
+			b.Status == BookingStatus.Approved && 
+			b.DueDate.HasValue && 
+			b.DueDate.Value < DateTime.UtcNow)
+			.OrderBy(b => b.DueDate);
+	}
 
-        public async Task<bool> ApproveBookingAsync(string id)
-        {
-            var booking = await GetByIdAsync(id);
-            if (booking == null || booking.Status != "Pending") return false;
+	public Booking? GetById(string id) => _bookings.FirstOrDefault(b => b.Id == id);
 
-            booking.Status = "Active";
-            await UpdateAsync(id, booking);
-            
-            // Decrease available copies
-            if (!string.IsNullOrEmpty(booking.BookObjectId))
-            {
-                await _bookService.UpdateAvailabilityAsync(booking.BookObjectId, -1);
-            }
-            
-            return true;
-        }
+	public Booking ReserveBook(User user, Book book)
+	{
+		lock (_mutex)
+		{
+			if (HasActiveBookingForBook(book.Id))
+			{
+				throw new InvalidOperationException("This title already has an active reservation.");
+			}
 
-        public async Task<bool> DeclineBookingAsync(string id)
-        {
-            var booking = await GetByIdAsync(id);
-            if (booking == null || booking.Status != "Pending") return false;
+			var booking = new Booking
+			{
+				BookId = book.Id,
+				BookTitle = book.Title,
+				UserId = user.Id,
+				Username = user.FullName,
+				CreatedAt = DateTime.UtcNow,
+				Status = BookingStatus.Pending
+			};
 
-            booking.Status = "Declined";
-            await UpdateAsync(id, booking);
-            return true;
-        }
+			_bookings.Add(booking);
+			_bookService.MarkReserved(book.Id);
+			return booking;
+		}
+	}
 
-        public async Task<bool> ReturnBookAsync(string id)
-        {
-            var booking = await GetByIdAsync(id);
-            if (booking == null || booking.Status != "Active") return false;
+	public bool ApproveBooking(string bookingId, DateTime dueDate)
+	{
+		lock (_mutex)
+		{
+			var booking = _bookings.FirstOrDefault(b => b.Id == bookingId);
+			if (booking is null || booking.Status != BookingStatus.Pending)
+			{
+				return false;
+			}
 
-            booking.ReturnDate = DateTime.Now;
-            booking.Status = "Returned";
-            
-            // Calculate late fee if overdue
-            if (booking.ReturnDate > booking.DueDate)
-            {
-                var daysLate = (booking.ReturnDate.Value - booking.DueDate).Days;
-                booking.LateFee = daysLate * 1.0m; // $1 per day late fee
-            }
+			booking.Status = BookingStatus.Approved;
+			booking.ApprovedAt = DateTime.UtcNow;
+			booking.DueDate = dueDate;
+			_bookService.MarkReserved(booking.BookId);
+			return true;
+		}
+	}
 
-            await UpdateAsync(id, booking);
-            
-            // Increase available copies
-            if (!string.IsNullOrEmpty(booking.BookObjectId))
-            {
-                await _bookService.UpdateAvailabilityAsync(booking.BookObjectId, 1);
-            }
-            
-            return true;
-        }
+	public bool RefuseBooking(string bookingId)
+	{
+		lock (_mutex)
+		{
+			var booking = _bookings.FirstOrDefault(b => b.Id == bookingId);
+			if (booking is null || booking.Status != BookingStatus.Pending)
+			{
+				return false;
+			}
 
-        public async Task CheckAndUpdateOverdueBookingsAsync()
-        {
-            var activeBookings = await GetActiveBookingsAsync();
-            foreach (var booking in activeBookings)
-            {
-                if (booking.DueDate < DateTime.Now && booking.Status == "Active")
-                {
-                    booking.Status = "Overdue";
-                    await UpdateAsync(booking.Id!, booking);
-                }
-            }
-        }
-    }
+			booking.Status = BookingStatus.Refused;
+			booking.ApprovedAt = null;
+			booking.DueDate = null;
+			booking.ReturnedAt = DateTime.UtcNow;
+			_bookService.MarkReturned(booking.BookId);
+			return true;
+		}
+	}
+
+	public bool MarkReturned(string bookingId)
+	{
+		lock (_mutex)
+		{
+			var booking = _bookings.FirstOrDefault(b => b.Id == bookingId);
+			if (booking is null || booking.Status != BookingStatus.Approved) return false;
+
+			booking.Status = BookingStatus.Completed;
+			booking.ReturnedAt = DateTime.UtcNow;
+			_bookService.MarkReturned(booking.BookId);
+			return true;
+		}
+	}
+
+	private bool HasActiveBookingForBook(string bookId)
+	{
+		return _bookings.Any(b => b.BookId.Equals(bookId, StringComparison.OrdinalIgnoreCase)
+			&& (b.Status == BookingStatus.Pending || b.Status == BookingStatus.Approved));
+	}
 }

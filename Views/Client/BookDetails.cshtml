@@ -1,67 +1,60 @@
-@model LibraryWebApp.Models.Book
-
+@model LibraryWebApp.Models.ViewModels.Client.BookDetailsViewModel
 @{
-    ViewData["Title"] = "Book Details";
+    ViewData["Title"] = Model.Book.Title;
 }
 
-<h1>Book Details</h1>
-
-<div class="card">
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-4">
-                @if (!string.IsNullOrEmpty(Model.ImagePath))
-                {
-                    <img src="@Model.ImagePath" alt="@Model.Title cover" class="img-fluid rounded" style="max-height: 400px; object-fit: cover;" />
-                }
-                else
-                {
-                    <div class="bg-secondary d-flex align-items-center justify-content-center rounded" style="height: 400px;">
-                        <span class="text-white">No Cover Image</span>
-                    </div>
-                }
-            </div>
-            <div class="col-md-8">
-                <h2 class="card-title">@Model.Title</h2>
-                <h4 class="card-subtitle mb-3 text-muted">by @Model.Author</h4>
-                
-                <div class="mb-3">
-                    <p><strong>Category:</strong> @Model.Category</p>
-                    <p><strong>ISBN:</strong> @Model.ISBN</p>
-                    <p><strong>Publication Year:</strong> @Model.PublicationYear</p>
-                    <p><strong>Available Copies:</strong> @Model.AvailableCopies out of @Model.TotalCopies</p>
-                    <p>
-                        <strong>Status:</strong>
-                        @if (Model.AvailableCopies > 0)
-                        {
-                            <span class="badge bg-success">Available</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-danger">Unavailable</span>
-                        }
-                    </p>
-                </div>
-                
-                <div class="mb-3">
-                    <h5>Description</h5>
-                    <p>@(string.IsNullOrEmpty(Model.Description) ? "No description available." : Model.Description)</p>
-                </div>
-                
-                <div class="mt-3">
-                    @if (Model.AvailableCopies > 0)
-                    {
-                        <form method="post" asp-action="BookABook" asp-route-id="@Model.Id" style="display:inline;">
-                            <button type="submit" class="btn btn-success">Book This Book</button>
-                        </form>
-                    }
-                    else
-                    {
-                        <button class="btn btn-secondary" disabled>Currently Unavailable</button>
-                    }
-                    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
-                </div>
+<section class="section-width" style="padding: 4rem 0 2rem;">
+    <div class="row g-5 align-items-start">
+        <div class="col-lg-5">
+            <div style="width: 100%; border-radius: 28px; overflow: hidden; background: var(--surface-muted);">
+                <img src="@(string.IsNullOrWhiteSpace(Model.Book.CoverImagePath) ? "https://images.unsplash.com/photo-1528109086351-0b07c1145f35?auto=format&fit=crop&w=600&q=80" : Model.Book.CoverImagePath)" alt="@Model.Book.Title cover" style="width: 100%; height: 520px; object-fit: cover;" />
             </div>
         </div>
+        <div class="col-lg-7">
+            <small>@Model.Book.CategoryName</small>
+            <h1>@Model.Book.Title</h1>
+            <p style="font-size: 1.1rem;">by @Model.Book.Author</p>
+            <p>@Model.Book.Description</p>
+
+            <div class="d-flex gap-4 mt-4" style="color: var(--text-tertiary);">
+                <span>Rating: @Model.Book.Rating.ToString("0.0")</span>
+                <span>@Model.Book.Pages pages</span>
+                <span>Published @Model.Book.PublishedOn.Year</span>
+            </div>
+
+            @if (TempData["StatusMessage"] is string statusMessage)
+            {
+                var statusType = TempData["StatusType"] as string;
+                var alertClass = statusType == "error" ? "alert-danger" : "alert-success";
+                <div class="alert @alertClass" role="alert" style="margin-top: 1.5rem;">@statusMessage</div>
+            }
+
+            <form asp-action="Reserve" method="post" asp-route-id="@Model.Book.Id" class="mt-4">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-primary btn-lg" @(Model.Book.IsAvailable ? string.Empty : "disabled")>
+                    @(Model.Book.IsAvailable ? "Reserve now" : "Currently reserved")
+                </button>
+            </form>
+        </div>
     </div>
-</div>
+</section>
+
+<section class="section-width" style="padding: 0 0 4rem;">
+    <div class="card" style="padding: 2.5rem;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 style="margin: 0;">You may also like</h3>
+        </div>
+        <div class="row g-4">
+            @foreach (var related in Model.RelatedBooks)
+            {
+                <div class="col-md-3">
+                    <div class="card" style="padding: 1.5rem; height: 100%;">
+                        <strong>@related.Title</strong>
+                        <p style="margin: 0.5rem 0;">@related.Author</p>
+                        <a asp-action="BookDetails" asp-route-id="@related.Id" class="btn btn-link-style" style="margin-top: 1rem;">View</a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>

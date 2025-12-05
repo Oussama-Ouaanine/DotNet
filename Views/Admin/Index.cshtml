@@ -1,53 +1,109 @@
+@using System.Linq
+@model LibraryWebApp.Models.ViewModels.Admin.AdminDashboardViewModel
 @{
-    ViewData["Title"] = "Admin Dashboard";
+    ViewData["Title"] = "Admin Studio";
 }
 
-<h1>Admin Dashboard</h1>
+<section class="section-width" style="padding: 4rem 0 2rem;">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <small>Admin studio</small>
+            <h1 style="margin: 0.5rem 0 0;">Operational overview</h1>
+        </div>
+        <a asp-action="Books" class="btn btn-primary">Add new title</a>
+    </div>
 
-<div class="row mt-4">
-    <div class="col-md-3">
-        <div class="card text-white bg-primary mb-3">
-            <div class="card-header">Total Books</div>
-            <div class="card-body">
-                <h2 class="card-title">@ViewBag.TotalBooks</h2>
+    <div class="row g-3">
+        <div class="col-md-3">
+            <div class="card text-center" style="padding: 1.8rem;">
+                <small>Total titles</small>
+                <h2 style="margin-top: 0.75rem;">@Model.TotalBooks</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center" style="padding: 1.8rem;">
+                <small>Active categories</small>
+                <h2 style="margin-top: 0.75rem;">@Model.TotalCategories</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center" style="padding: 1.8rem;">
+                <small>Live reservations</small>
+                <h2 style="margin-top: 0.75rem;">@Model.ActiveBookings</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center" style="padding: 1.8rem;">
+                <small>Members</small>
+                <h2 style="margin-top: 0.75rem;">@Model.TotalMembers</h2>
             </div>
         </div>
     </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-header">Total Users</div>
-            <div class="card-body">
-                <h2 class="card-title">@ViewBag.TotalUsers</h2>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-warning mb-3">
-            <div class="card-header">Pending Bookings</div>
-            <div class="card-body">
-                <h2 class="card-title">@ViewBag.PendingBookings</h2>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-info mb-3">
-            <div class="card-header">Active Bookings</div>
-            <div class="card-body">
-                <h2 class="card-title">@ViewBag.ActiveBookings</h2>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="row mt-4">
-    <div class="col-md-12">
-        <h3>Quick Actions</h3>
-        <a asp-action="Books" class="btn btn-primary">Manage Books</a>
-        <a asp-action="Categories" class="btn btn-success">Manage Categories</a>
-        <a asp-action="Bookings" class="btn btn-warning">View Bookings</a>
-        <a asp-action="Clients" class="btn btn-info">View Clients</a>
+    <div class="row g-4 mt-1">
+        <div class="col-lg-7">
+            <div class="card" style="padding: 2rem;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 style="margin: 0;">Recent reservations</h3>
+                    <div class="d-flex gap-2">
+                        <a asp-action="History" class="btn btn-link-style">View history</a>
+                        <a asp-action="Bookings" class="btn btn-link-style">View all</a>
+                    </div>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Book</th>
+                            <th>Member</th>
+                            <th>Reserved</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.RecentBookings.Any())
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-4">No reservations yet.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var booking in Model.RecentBookings)
+                            {
+                                <tr>
+                                    <td>@booking.BookTitle</td>
+                                    <td>@booking.Username</td>
+                                    <td>@booking.CreatedAt.ToLocalTime().ToString("dd MMM")</td>
+                                    <td><span class="badge bg-dark">@booking.Status</span></td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card" style="padding: 2rem;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 style="margin: 0;">Spotlight titles</h3>
+                    <a asp-action="Books" class="btn btn-link-style">Manage</a>
+                </div>
+                <div class="d-grid gap-3">
+                    @foreach (var book in Model.FeaturedBooks)
+                    {
+                        <div class="d-flex gap-3 align-items-center">
+                            <div style="width: 60px; height: 86px; border-radius: 16px; overflow: hidden; background: var(--surface-muted);">
+                                <img src="@(string.IsNullOrWhiteSpace(book.CoverImagePath) ? "https://images.unsplash.com/photo-1528109086351-0b07c1145f35?auto=format&fit=crop&w=120&q=80" : book.CoverImagePath)" alt="@book.Title cover" style="width: 100%; height: 100%; object-fit: cover;" />
+                            </div>
+                            <div>
+                                <strong>@book.Title</strong>
+                                <p style="margin: 0;">@book.Author</p>
+                                <small>@book.CategoryName</small>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
     </div>
-</div>
+</section>

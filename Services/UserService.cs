@@ -1,53 +1,93 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using LibraryWebApp.Models;
-using MongoDB.Driver;
+using LibraryWebApp.Models.ViewModels.Account;
 
-namespace LibraryWebApp.Services
+namespace LibraryWebApp.Services;
+
+public class UserService
 {
-    public class UserService
-    {
-        private readonly IMongoCollection<User> _users;
+	private readonly List<User> _users = new();
+	private readonly object _mutex = new();
 
-        public UserService(MongoDbService mongoDbService)
-        {
-            _users = mongoDbService.Users;
-        }
+	public UserService()
+	{
+		SeedUsers();
+	}
 
-        public async Task<List<User>> GetAllAsync() =>
-            await _users.Find(_ => true).ToListAsync();
+	public IEnumerable<User> GetAll() => _users;
 
-        public async Task<User?> GetByIdAsync(string id) =>
-            await _users.Find(x => x.Id == id).FirstOrDefaultAsync();
+	public IEnumerable<User> GetMembers() => _users.Where(u => !u.IsAdmin);
 
-        public async Task<User?> GetByUsernameAsync(string username) =>
-            await _users.Find(x => x.Username == username).FirstOrDefaultAsync();
+	public User? GetById(string id) => _users.FirstOrDefault(u => u.Id == id);
 
-        public async Task<User?> GetByEmailAsync(string email) =>
-            await _users.Find(x => x.Email == email).FirstOrDefaultAsync();
+	public User? GetByEmail(string email) =>
+		_users.FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
 
-        public async Task<List<User>> GetClientsAsync() =>
-            await _users.Find(x => x.Role == "Client").ToListAsync();
+	public User? ValidateCredentials(string email, string password)
+	{
+		var user = GetByEmail(email);
+		if (user is null) return null;
+		return user.Password == password ? user : null;
+	}
 
-        public async Task<List<User>> GetAdminsAsync() =>
-            await _users.Find(x => x.Role == "Admin").ToListAsync();
+	public User Register(RegisterInputModel input, bool isAdmin = false)
+	{
+		lock (_mutex)
+		{
+			var existing = GetByEmail(input.Email);
+			if (existing is not null)
+			{
+				throw new InvalidOperationException("An account with this email already exists.");
+			}
 
-        public async Task CreateAsync(User user)
-        {
-            var maxUserId = await _users.Find(_ => true)
-                .SortByDescending(u => u.UserId)
-                .Limit(1)
-                .FirstOrDefaultAsync();
-            
-            user.UserId = maxUserId?.UserId + 1 ?? 1;
-            await _users.InsertOneAsync(user);
-        }
+			var user = new User
+			{
+				Id = Guid.NewGuid().ToString("N"),
+				Email = input.Email,
+				Username = input.Email,
+				Password = input.Password,
+				FullName = input.FullName,
+				IsAdmin = isAdmin
+			};
 
-        public async Task UpdateAsync(string id, User user) =>
-            await _users.ReplaceOneAsync(x => x.Id == id, user);
+			_users.Add(user);
+			return user;
+		}
+	}
 
-        public async Task DeleteAsync(string id) =>
-            await _users.DeleteOneAsync(x => x.Id == id);
-
-        public async Task<User?> AuthenticateAsync(string username, string password) =>
-            await _users.Find(x => x.Username == username && x.Password == password).FirstOrDefaultAsync();
-    }
+	private void SeedUsers()
+	{
+		_users.AddRange(new[]
+		{
+			new User
+			{
+				Id = "admin",
+				Email = "admin@lumenlibrary.com",
+				Username = "admin",
+				Password = "admin123",
+				FullName = "Lumen Admin",
+				IsAdmin = true
+			},
+			new User
+			{
+				Id = "maya",
+				Email = "maya@readers.com",
+				Username = "maya",
+				Password = "reader123",
+				FullName = "Maya Laurent",
+				FavouriteCategories = { "fiction", "wellbeing" }
+			},
+			new User
+			{
+				Id = "leo",
+				Email = "leo@readers.com",
+				Username = "leo",
+				Password = "reader123",
+				FullName = "Leo Kim",
+				FavouriteCategories = { "technology", "business" }
+			}
+		});
+	}
 }

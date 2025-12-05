@@ -1,64 +1,54 @@
-@model LibraryWebApp.Models.User
-
+@model LibraryWebApp.Models.ViewModels.Account.RegisterInputModel
 @{
-    ViewData["Title"] = "Register";
+    ViewData["Title"] = "Join Lumen Library";
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h2>Register</h2>
-            </div>
-            <div class="card-body">
-                @if (ViewBag.Error != null)
-                {
-                    <div class="alert alert-danger">@ViewBag.Error</div>
-                }
-                
-                @if (ViewBag.Success != null)
-                {
-                    <div class="alert alert-success">@ViewBag.Success</div>
-                }
-                
-                <form method="post" asp-action="Register">
+<section class="section-width" style="padding: 6rem 0 4rem;">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card" style="padding: 3rem;">
+                <h2 style="margin-bottom: 0.75rem;">Create your free account</h2>
+                <p style="margin-bottom: 2.5rem;">Save favourites, reserve instantly, and enjoy personalised recommendations.</p>
+
+                <form asp-action="Register" method="post" novalidate>
                     @Html.AntiForgeryToken()
-                    
-                    <div class="mb-3">
-                        <label asp-for="Username" class="form-label"></label>
-                        <input asp-for="Username" class="form-control" />
-                        <span asp-validation-for="Username" class="text-danger"></span>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label asp-for="FullName" class="form-label"></label>
+                            <input asp-for="FullName" class="form-control" autocomplete="name" />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" autocomplete="email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ConfirmPassword" class="form-label"></label>
+                            <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label asp-for="Email" class="form-label"></label>
-                        <input asp-for="Email" class="form-control" type="email" />
-                        <span asp-validation-for="Email" class="text-danger"></span>
+
+                    <div class="d-flex align-items-center gap-3 mt-4" style="font-size: 0.9rem; color: var(--text-tertiary);">
+                        <input type="checkbox" id="consent" class="form-check-input" required style="margin-top: 0;" />
+                        <label for="consent" class="form-check-label">I agree to the library terms of service and privacy notice.</label>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label asp-for="Password" class="form-label"></label>
-                        <input asp-for="Password" class="form-control" type="password" />
-                        <span asp-validation-for="Password" class="text-danger"></span>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label asp-for="PhoneNumber" class="form-label"></label>
-                        <input asp-for="PhoneNumber" class="form-control" />
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label asp-for="Address" class="form-label"></label>
-                        <textarea asp-for="Address" class="form-control" rows="3"></textarea>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary">Register</button>
-                    <a asp-action="Login" class="btn btn-link">Already have an account? Login here</a>
+
+                    <button type="submit" class="btn btn-primary w-100 mt-4">Create account</button>
                 </form>
+
+                <hr style="margin: 2.5rem 0;" />
+                <p class="text-center text-muted mb-0">Already part of the community? <a asp-action="Login">Sign in</a>.</p>
             </div>
         </div>
     </div>
-</div>
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

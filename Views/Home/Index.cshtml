@@ -1,58 +1,200 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model LibraryWebApp.Models.ViewModels.Home.HomeLandingViewModel
+@using System.Linq
+@{
+    ViewData["Title"] = "Library, Refined.";
+    var username = Context.Session.GetString("Username");
+    var role = Context.Session.GetString("Role");
+    var isAuthenticated = !string.IsNullOrEmpty(username);
+    var featured = Model?.FeaturedBooks?.ToList() ?? new List<LibraryWebApp.Models.Book>();
+    var heroBooks = featured.Take(3).ToList();
+    var shelfBooks = featured.Skip(3).Take(6).ToList();
+    var fallbackCover = "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=600&q=80";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome to the Online Library System</h1>
-    <p class="lead">Your gateway to a world of books</p>
-    
-    @if (Context.Session.GetString("Username") == null)
-    {
-        <div class="mt-4">
-            <a asp-controller="Account" asp-action="Login" class="btn btn-primary btn-lg mx-2">Login</a>
-            <a asp-controller="Account" asp-action="Register" class="btn btn-success btn-lg mx-2">Register</a>
+<section class="landing-hero">
+    <div class="landing-hero__inner">
+        <div class="landing-hero__content">
+            <span class="landing-eyebrow">Inspired by the polish of Apple.com</span>
+            <h1 class="landing-hero__title">A library experience crafted with flagship design.</h1>
+            <p class="landing-hero__subtitle">
+                Discover beautifully curated collections, ultra-fast reservations, and personalised reading insights—all presented with the same precision as the world's most iconic tech brands.
+            </p>
+            <div class="landing-hero__cta">
+                @if (!isAuthenticated)
+                {
+                    <a asp-controller="Account" asp-action="Register" class="btn btn-primary">Create your account</a>
+                    <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary">Sign in</a>
+                }
+                else if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    <a asp-controller="Admin" asp-action="Index" class="btn btn-primary">Enter admin studio</a>
+                    <a asp-controller="Admin" asp-action="Books" class="btn btn-outline-primary">Manage catalogue</a>
+                }
+                else
+                {
+                    <a asp-controller="Client" asp-action="Index" class="btn btn-primary">Browse library</a>
+                    <a asp-controller="Client" asp-action="MyBookings" class="btn btn-outline-primary">Your reservations</a>
+                }
+            </div>
+            <div class="landing-hero__meta">
+                <span>Precision search &middot; milliseconds fast</span>
+                <span>Adaptive layouts for every device</span>
+                <span>Collections curated by real librarians</span>
+            </div>
         </div>
+        <div class="landing-hero__visual">
+            <div class="device-preview">
+                <div class="device-status">
+                    <span>Featured titles</span>
+                    <span>@heroBooks.Count on display</span>
+                </div>
+                <div class="device-card-stack">
+                    @if (!heroBooks.Any())
+                    {
+                        <div class="device-card">
+                            <strong>No books yet</strong>
+                            <span>Add titles from the admin view to bring this space alive.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        foreach (var book in heroBooks)
+                        {
+                            var cover = string.IsNullOrWhiteSpace(book.CoverImagePath) ? fallbackCover : book.CoverImagePath;
+                            <div class="device-card">
+                                <div class="device-card__cover">
+                                    <img src="@cover" alt="@book.Title cover" />
+                                </div>
+                                <div class="device-card__meta">
+                                    <strong>@book.Title</strong>
+                                    <span>@book.Author &middot; @book.CategoryName</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="landing-panels">
+    <div class="landing-panels__inner">
+        <div class="landing-panels__heading">
+            <h2>Signature moments, just like the brands you love.</h2>
+            <p>Every interaction feels deliberate&mdash;from cinematic browsing to frictionless lending.</p>
+        </div>
+        <div class="panel-grid">
+            <article class="panel-card">
+                <div class="panel-icon">◎</div>
+                <div>
+                    <h3>Immersive discovery</h3>
+                    <p>Fluid, magazine-like layouts inspired by iconic launch pages help every title shine.</p>
+                </div>
+            </article>
+            <article class="panel-card">
+                <div class="panel-icon">⌁</div>
+                <div>
+                    <h3>One-tap reservations</h3>
+                    <p>Reserve, renew, and pick up books in a single motion with live status updates.</p>
+                </div>
+            </article>
+            <article class="panel-card">
+                <div class="panel-icon">✦</div>
+                <div>
+                    <h3>Curated intelligence</h3>
+                    <p>Smart recommendations blend editorial curation with your personal reading journey.</p>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="landing-split">
+    <div class="landing-split__inner">
+        <div class="landing-split__visual">
+            <div class="shelf-label">Featured shelves this week</div>
+            <div class="shelf">
+                @if (!shelfBooks.Any())
+                {
+                    <div class="shelf-row">
+                        <div class="shelf-book" style="display: flex; align-items: center; justify-content: center; color: var(--text-tertiary);">
+                            Add more featured books to showcase their covers here.
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    for (var i = 0; i < shelfBooks.Count; i += 3)
+                    {
+                        <div class="shelf-row">
+                            @foreach (var book in shelfBooks.Skip(i).Take(3))
+                            {
+                                var cover = string.IsNullOrWhiteSpace(book.CoverImagePath) ? fallbackCover : book.CoverImagePath;
+                                <div class="shelf-book">
+                                    <img src="@cover" alt="@book.Title cover" />
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+        <div class="landing-split__content">
+            <small>Crafted for modern readers</small>
+            <h2>Built with the calm confidence of a flagship retail experience.</h2>
+            <p>We studied the choreography of Apple, Tesla, and Airbnb to design an interface that feels instinctive the moment you arrive. Fast, graceful, and unmistakably premium.</p>
+            <div class="feature-list">
+                <div class="feature-item">
+                    <span>01</span>
+                    <div>
+                        <strong>Editorial storytelling</strong>
+                        <p>Collections feel like campaigns with purposeful typography, generous whitespace, and cinematic pacing.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span>02</span>
+                    <div>
+                        <strong>Responsive by obsession</strong>
+                        <p>Every component adapts like a native app, ensuring the same serenity on desktop, tablet, or phone.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span>03</span>
+                    <div>
+                        <strong>Actionable analytics</strong>
+                        <p>Admins track reservations, stock, and engagements through a dashboard engineered for clarity.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="landing-quote">
+    <div class="landing-quote__inner">
+        <blockquote>&ldquo;It feels like walking into a flagship store for books&mdash;a refreshingly modern way to discover stories.&rdquo;</blockquote>
+        <cite>Maya Laurent, Experience Designer &amp; Avid Reader</cite>
+    </div>
+</section>
+
+<section class="landing-cta">
+    @if (!isAuthenticated)
+    {
+        <h2>Step into a library crafted at the caliber of the world's best brands.</h2>
+        <p>Membership is free. Join to unlock reservations, personalised collections, and your private reading dashboard.</p>
+        <a asp-controller="Account" asp-action="Register" class="btn btn-primary">Join the experience</a>
+    }
+    else if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+    {
+        <h2>Ready to shape the next chapter for your readers?</h2>
+        <p>Jump into the admin studio to curate new campaigns, monitor engagements, and keep inventory in sync.</p>
+        <a asp-controller="Admin" asp-action="Index" class="btn btn-primary">Open admin studio</a>
     }
     else
     {
-        @if (Context.Session.GetString("Role") == "Admin")
-        {
-            <div class="mt-4">
-                <a asp-controller="Admin" asp-action="Index" class="btn btn-primary btn-lg">Go to Admin Dashboard</a>
-            </div>
-        }
-        else
-        {
-            <div class="mt-4">
-                <a asp-controller="Client" asp-action="Index" class="btn btn-primary btn-lg">Browse Books</a>
-            </div>
-        }
+        <h2>Your next story is waiting.</h2>
+        <p>Browse fresh arrivals, build collections, and keep your reading momentum without losing a beat.</p>
+        <a asp-controller="Client" asp-action="Index" class="btn btn-primary">Explore the collection</a>
     }
-</div>
-
-<div class="row mt-5">
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h3>📚 Browse Books</h3>
-                <p>Explore our vast collection of books across various categories</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h3>🔖 Book Online</h3>
-                <p>Reserve books online and pick them up at your convenience</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h3>📊 Track Status</h3>
-                <p>Keep track of your bookings and due dates easily</p>
-            </div>
-        </div>
-    </div>
-</div>
+</section>

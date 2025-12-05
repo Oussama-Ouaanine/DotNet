@@ -1,80 +1,105 @@
-@model IEnumerable<LibraryWebApp.Models.Booking>
-
+@model LibraryWebApp.Models.ViewModels.Client.MyBookingsViewModel
+@using System.Linq
 @{
-    ViewData["Title"] = "My Bookings";
+    ViewData["Title"] = "My bookings";
 }
 
-<h1>My Bookings</h1>
+<section class="section-width" style="padding: 4rem 0 2rem;">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <small>Your activity</small>
+            <h1 style="margin: 0.5rem 0 0;">Reservations</h1>
+        </div>
+    </div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
+    @if (TempData["StatusMessage"] is string statusMessage)
+    {
+        var statusType = TempData["StatusType"] as string;
+        var alertClass = statusType == "error" ? "alert-danger" : "alert-success";
+        <div class="alert @alertClass" role="alert">@statusMessage</div>
+    }
 
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
-
-@if (!Model.Any())
-{
-    <div class="alert alert-info">You don't have any bookings yet.</div>
-}
-else
-{
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Booking ID</th>
-                <th>Book Title</th>
-                <th>Booking Date</th>
-                <th>Due Date</th>
-                <th>Return Date</th>
-                <th>Status</th>
-                <th>Late Fee</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var booking in Model)
+    <div class="card" style="padding: 2.5rem; margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 1.5rem;">Pending approval</h3>
+        <div class="d-grid gap-3">
+            @if (!Model.Pending.Any())
             {
-                <tr>
-                    <td>@booking.BookingId</td>
-                    <td>@booking.BookTitle</td>
-                    <td>@booking.BookingDate.ToString("dd/MM/yyyy")</td>
-                    <td>@booking.DueDate.ToString("dd/MM/yyyy")</td>
-                    <td>@(booking.ReturnDate?.ToString("dd/MM/yyyy") ?? "-")</td>
-                    <td>
-                        @switch (booking.Status)
-                        {
-                            case "Pending":
-                                <span class="badge bg-warning">@booking.Status</span>
-                                break;
-                            case "Active":
-                                <span class="badge bg-info">@booking.Status</span>
-                                break;
-                            case "Declined":
-                                <span class="badge bg-danger">@booking.Status</span>
-                                break;
-                            case "Returned":
-                                <span class="badge bg-success">@booking.Status</span>
-                                break;
-                            case "Overdue":
-                                <span class="badge bg-danger">@booking.Status</span>
-                                break;
-                        }
-                    </td>
-                    <td>@(booking.LateFee > 0 ? "$" + booking.LateFee.ToString("0.00") : "-")</td>
-                    <td>
-                        @if (booking.Status == "Pending")
-                        {
-                            <form method="post" asp-action="CancelBooking" asp-route-id="@booking.Id" style="display:inline;">
-                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to cancel this booking?')">Cancel</button>
-                            </form>
-                        }
-                    </td>
-                </tr>
+                <p style="margin: 0;">No pending requests. Browse the <a asp-action="Browse">catalogue</a> to reserve a title.</p>
             }
-        </tbody>
-    </table>
-}
+            else
+            {
+                foreach (var booking in Model.Pending)
+                {
+                    <div class="card" style="padding: 1.5rem;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>@booking.BookTitle</strong>
+                                <p style="margin: 0.25rem 0 0; color: var(--text-tertiary);">Requested @booking.CreatedAt.ToLocalTime().ToString("dd MMM yyyy") • Awaiting admin approval</p>
+                            </div>
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="card" style="padding: 2.5rem; margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 1.5rem;">Approved & checked out</h3>
+        <div class="d-grid gap-3">
+            @if (!Model.Approved.Any())
+            {
+                <p style="margin: 0;">No approved reservations yet.</p>
+            }
+            else
+            {
+                foreach (var booking in Model.Approved)
+                {
+                    <div class="card" style="padding: 1.5rem;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>@booking.BookTitle</strong>
+                                <p style="margin: 0.25rem 0 0; color: var(--text-tertiary);">Due back @booking.DueDate?.ToLocalTime().ToString("dd MMM yyyy")</p>
+                            </div>
+                            <span class="badge bg-dark">Approved</span>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="card" style="padding: 2.5rem;">
+        <h3 style="margin-bottom: 1.5rem;">History</h3>
+        <div class="d-grid gap-3">
+            @if (!Model.History.Any())
+            {
+                <p style="margin: 0;">No past reservations yet.</p>
+            }
+            else
+            {
+                foreach (var booking in Model.History)
+                {
+                    var badgeClass = booking.Status == BookingStatus.Refused ? "badge bg-danger" : "badge bg-secondary";
+                    var statusLabel = booking.Status == BookingStatus.Refused ? "Refused" : "Completed";
+                    <div class="card" style="padding: 1.5rem;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>@booking.BookTitle</strong>
+                                @if (booking.Status == BookingStatus.Refused)
+                                {
+                                    <p style="margin: 0.25rem 0 0; color: var(--text-tertiary);">Request was declined on @booking.ReturnedAt?.ToLocalTime().ToString("dd MMM yyyy")</p>
+                                }
+                                else
+                                {
+                                    <p style="margin: 0.25rem 0 0; color: var(--text-tertiary);">Returned @booking.ReturnedAt?.ToLocalTime().ToString("dd MMM yyyy")</p>
+                                }
+                            </div>
+                            <span class="@badgeClass">@statusLabel</span>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</section>

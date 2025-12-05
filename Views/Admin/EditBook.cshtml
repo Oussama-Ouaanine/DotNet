@@ -1,90 +1,79 @@
-@model LibraryWebApp.Models.Book
-
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model LibraryWebApp.Models.ViewModels.Admin.BookFormModel
 @{
-    ViewData["Title"] = "Edit Book";
+    ViewData["Title"] = "Edit book";
 }
 
-<h1>Edit Book</h1>
+<section class="section-width" style="padding: 4rem 0 2rem;">
+    <div class="mb-4">
+        <a asp-action="Books" class="btn btn-link-style">← Back to catalogue</a>
+        <h1 style="margin-top: 0.75rem;">Update @Model.Title</h1>
+        <p style="max-width: 560px;">Fine tune the details, refresh the cover, or feature the title in your hero sections.</p>
+    </div>
 
-<div class="row">
-    <div class="col-md-8">
-        <form method="post" asp-action="EditBook" asp-route-id="@Model.Id" enctype="multipart/form-data">
+    <div class="card" style="padding: 2.5rem;">
+        <form asp-action="EditBook" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
-            
-            <input type="hidden" asp-for="BookId" />
-            <input type="hidden" asp-for="ImagePath" />
-            
-            <div class="mb-3">
-                <label asp-for="Title" class="form-label"></label>
-                <input asp-for="Title" class="form-control" />
-                <span asp-validation-for="Title" class="text-danger"></span>
-            </div>
-            
-            <div class="mb-3">
-                <label asp-for="Author" class="form-label"></label>
-                <input asp-for="Author" class="form-control" />
-                <span asp-validation-for="Author" class="text-danger"></span>
-            </div>
-            
-            <div class="mb-3">
-                <label asp-for="Category" class="form-label"></label>
-                <select asp-for="Category" class="form-select">
-                    <option value="">-- Select Category --</option>
-                    @foreach (var category in ViewBag.Categories as List<LibraryWebApp.Models.Category>)
-                    {
-                        <option value="@category.CategoryName" selected="@(category.CategoryName == Model.Category)">@category.CategoryName</option>
-                    }
-                </select>
-                <span asp-validation-for="Category" class="text-danger"></span>
-            </div>
-            
-            <div class="mb-3">
-                <label asp-for="ISBN" class="form-label"></label>
-                <input asp-for="ISBN" class="form-control" />
-                <span asp-validation-for="ISBN" class="text-danger"></span>
-            </div>
-            
-            <div class="mb-3">
-                <label asp-for="PublicationYear" class="form-label"></label>
-                <input asp-for="PublicationYear" class="form-control" type="number" />
-                <span asp-validation-for="PublicationYear" class="text-danger"></span>
-            </div>
-            
-            <div class="mb-3">
-                <label asp-for="Description" class="form-label"></label>
-                <textarea asp-for="Description" class="form-control" rows="4"></textarea>
-            </div>
-            
-            <div class="mb-3">
-                <label asp-for="AvailableCopies" class="form-label"></label>
-                <input asp-for="AvailableCopies" class="form-control" type="number" />
-                <span asp-validation-for="AvailableCopies" class="text-danger"></span>
-            </div>
-            
-            <div class="mb-3">
-                <label asp-for="TotalCopies" class="form-label"></label>
-                <input asp-for="TotalCopies" class="form-control" type="number" />
-                <span asp-validation-for="TotalCopies" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label for="coverImage" class="form-label">Book Cover Image</label>
-                @if (!string.IsNullOrEmpty(Model.ImagePath))
-                {
-                    <div class="mb-2">
-                        <img src="@Model.ImagePath" alt="Current book cover" class="img-thumbnail" style="max-width: 200px; max-height: 300px;" />
-                        <p class="text-muted small">Current cover image</p>
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="ExistingCoverPath" />
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <div class="mb-3">
+                        <label asp-for="Title" class="form-label"></label>
+                        <input asp-for="Title" class="form-control" />
+                        <span asp-validation-for="Title" class="text-danger"></span>
                     </div>
-                }
-                <input type="file" class="form-control" id="coverImage" name="coverImage" accept="image/*" />
-                <small class="text-muted">Upload a new cover image to replace the current one (JPG, PNG, GIF)</small>
+                    <div class="mb-3">
+                        <label asp-for="Author" class="form-label"></label>
+                        <input asp-for="Author" class="form-control" />
+                        <span asp-validation-for="Author" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="CategoryId" class="form-label"></label>
+                        <select asp-for="CategoryId" asp-items="@(new SelectList(Model.Categories, "Id", "Name", Model.CategoryId))" class="form-select"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label"></label>
+                        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="mb-3">
+                        <label class="form-label">Cover art</label>
+                        <input type="file" name="coverImage" accept="image/*" class="form-control" />
+                        @if (!string.IsNullOrWhiteSpace(Model.ExistingCoverPath))
+                        {
+                            <div style="margin-top: 1rem; width: 100%; border-radius: 16px; overflow: hidden; background: var(--surface-muted);">
+                                <img src="@Model.ExistingCoverPath" alt="Current cover" style="width: 100%; height: 220px; object-fit: cover;" />
+                            </div>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="PublishedYear" class="form-label"></label>
+                        <input asp-for="PublishedYear" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Pages" class="form-label"></label>
+                        <input asp-for="Pages" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Rating" class="form-label"></label>
+                        <input asp-for="Rating" class="form-control" step="0.1" min="0" max="5" />
+                    </div>
+                    <div class="form-check form-switch mb-2">
+                        <input asp-for="IsAvailable" class="form-check-input" />
+                        <label asp-for="IsAvailable" class="form-check-label"></label>
+                    </div>
+                    <div class="form-check form-switch mb-4">
+                        <input asp-for="IsFeatured" class="form-check-input" />
+                        <label asp-for="IsFeatured" class="form-check-label">Feature on homepage</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Save changes</button>
+                </div>
             </div>
-            
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-            <a asp-action="Books" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
-</div>
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

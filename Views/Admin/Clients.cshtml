@@ -1,33 +1,45 @@
 @model IEnumerable<LibraryWebApp.Models.User>
-
+@using System.Linq
 @{
-    ViewData["Title"] = "Registered Clients";
+    ViewData["Title"] = "Members";
 }
 
-<h1>Registered Clients</h1>
+<section class="section-width" style="padding: 4rem 0 2rem;">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <small>Members</small>
+            <h1 style="margin: 0.5rem 0 0;">Community roster</h1>
+        </div>
+    </div>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>User ID</th>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Phone Number</th>
-            <th>Address</th>
-            <th>Registration Date</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var client in Model)
-        {
-            <tr>
-                <td>@client.UserId</td>
-                <td>@client.Username</td>
-                <td>@client.Email</td>
-                <td>@client.PhoneNumber</td>
-                <td>@client.Address</td>
-                <td>@client.RegistrationDate.ToString("dd/MM/yyyy")</td>
-            </tr>
-        }
-    </tbody>
-</table>
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Interests</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="3" class="text-center py-4">No members registered yet.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var member in Model)
+                    {
+                        <tr>
+                            <td>@member.FullName</td>
+                            <td>@member.Email</td>
+                            <td>@string.Join(", ", member.FavouriteCategories)</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
