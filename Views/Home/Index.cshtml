@@ -1,0 +1,58 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome to the Online Library System</h1>
+    <p class="lead">Your gateway to a world of books</p>
+    
+    @if (Context.Session.GetString("Username") == null)
+    {
+        <div class="mt-4">
+            <a asp-controller="Account" asp-action="Login" class="btn btn-primary btn-lg mx-2">Login</a>
+            <a asp-controller="Account" asp-action="Register" class="btn btn-success btn-lg mx-2">Register</a>
+        </div>
+    }
+    else
+    {
+        @if (Context.Session.GetString("Role") == "Admin")
+        {
+            <div class="mt-4">
+                <a asp-controller="Admin" asp-action="Index" class="btn btn-primary btn-lg">Go to Admin Dashboard</a>
+            </div>
+        }
+        else
+        {
+            <div class="mt-4">
+                <a asp-controller="Client" asp-action="Index" class="btn btn-primary btn-lg">Browse Books</a>
+            </div>
+        }
+    }
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>📚 Browse Books</h3>
+                <p>Explore our vast collection of books across various categories</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>🔖 Book Online</h3>
+                <p>Reserve books online and pick them up at your convenience</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>📊 Track Status</h3>
+                <p>Keep track of your bookings and due dates easily</p>
+            </div>
+        </div>
+    </div>
+</div>
