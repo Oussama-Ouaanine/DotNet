@@ -1,408 +1,224 @@
-# 📚 Library Management System (Lumen Library)
+# Library Web Application
 
-A modern, full-featured library management web application built with **ASP.NET Core 8.0 MVC**. This system provides a complete solution for managing library operations including book cataloging, user management, and a sophisticated reservation workflow with multi-state approval process.
+An Online Library Management System built with ASP.NET Core MVC and MongoDB.
 
-![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-8.0-512BD4?style=for-the-badge&logo=.net&logoColor=white)
-![C#](https://img.shields.io/badge/C%23-12-239120?style=for-the-badge&logo=c-sharp&logoColor=white)
-![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
+## Features
 
-## ✨ Key Highlights
+### For Clients
+- ✅ User Registration and Login
+- ✅ Browse and Search Books
+- ✅ Book Reservation System
+- ✅ View Booking History
+- ✅ Track Booking Status
+- ✅ View Book Details
 
-- 🎯 **Production-Ready Architecture**: Clean MVC pattern with layered design
-- 🔐 **Secure Authentication**: Session-based auth with role-based access control (RBAC)
-- 📖 **Rich Catalog**: Pre-loaded with 50 books across 6 categories with real cover images
-- 🔄 **Advanced Workflow**: Multi-state booking process (Pending → Approved/Refused → Completed)
-- 📱 **Responsive Design**: Modern UI built with Bootstrap 5, works on all devices
-- ⚡ **High Performance**: In-memory storage with thread-safe operations
-- 📊 **Admin Dashboard**: Comprehensive statistics and management tools
-- 🎨 **Beautiful UX**: Card-based layout with smooth animations and visual feedback
+### For Administrators
+- ✅ Dashboard with Statistics
+- ✅ Manage Books (Add, Edit, Delete)
+- ✅ Manage Categories
+- ✅ Approve/Decline Booking Requests
+- ✅ View All Bookings
+- ✅ View Registered Clients
+- ✅ Manage Book Availability
 
----
+## Technologies Used
 
-## 🌟 Features
+- **Framework**: ASP.NET Core 8.0 MVC
+- **Database**: MongoDB
+- **Language**: C#
+- **Frontend**: Bootstrap 5, Razor Views
+- **Driver**: MongoDB.Driver 3.5.0
 
-### 👥 For Library Members (Clients)
+## Prerequisites
 
-| Feature | Description |
-|---------|-------------|
-| 📚 **Browse Catalog** | Explore books organized by 6 categories with stunning cover images |
-| 🔍 **Smart Search** | Find books instantly by title or author (case-insensitive) |
-| 📖 **Book Details** | View complete information: ISBN, description, publication year, author bio |
-| 🎫 **One-Click Reservation** | Reserve available books with instant confirmation |
-| 📊 **Track Bookings** | Monitor reservation status with organized tabs (Pending, Approved, History) |
-| ⏰ **Due Date Tracking** | See due dates for approved reservations |
-| 🎨 **Visual Status** | Color-coded badges for booking states |
+- .NET SDK 8.0 or higher
+- MongoDB Server (local or cloud)
+- Visual Studio Code (or any IDE)
 
-### 👨‍💼 For Administrators
+## Installation & Setup
 
-| Feature | Description |
-|---------|-------------|
-| 📊 **Dashboard** | Real-time statistics: total books, categories, active bookings, members |
-| 📚 **Book Management** | Full CRUD operations with cover image upload support |
-| 🏷️ **Category Management** | Create and manage book categories with icons |
-| ✅ **Booking Approval** | Approve or refuse reservations with custom due date assignment |
-| 📜 **Complete History** | View all bookings with filters (status, search) and overdue alerts |
-| 👥 **Member Management** | View registered users with registration dates |
-| 🔴 **Overdue Detection** | Automatic highlighting of late returns with visual alerts |
-| 🔄 **Status Management** | Mark books as returned and complete the booking cycle |
+### 1. Install MongoDB
 
----
+**Option A: Install Locally**
+```bash
+# Ubuntu/Debian
+sudo apt-get install -y mongodb-org
 
-## 🚀 Getting Started
+# Start MongoDB service
+sudo systemctl start mongod
+sudo systemctl enable mongod
+```
 
-### Prerequisites
+**Option B: Use MongoDB Atlas (Cloud)**
+- Sign up at https://www.mongodb.com/cloud/atlas
+- Create a free cluster
+- Get your connection string
 
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or higher
+### 2. Configure Database Connection
 
-### Quick Start
+Edit `appsettings.json`:
+```json
+{
+  "DatabaseSettings": {
+    "ConnectionString": "mongodb://localhost:27017",
+    "DatabaseName": "LibraryDB"
+  }
+}
+```
+
+For MongoDB Atlas, use your connection string:
+```json
+{
+  "DatabaseSettings": {
+    "ConnectionString": "mongodb+srv://<username>:<password>@cluster.mongodb.net/",
+    "DatabaseName": "LibraryDB"
+  }
+}
+```
+
+### 3. Build and Run
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/Oussama-Ouaanine/DotNet.git
-cd DotNet/LibraryWebApp
-
-# 2. Build the project
+cd LibraryWebApp
+dotnet restore
 dotnet build
-
-# 3. Run the application
 dotnet run
-
-# 4. Open your browser
-# Navigate to: http://localhost:5284
 ```
 
-The application will start with:
-- ✅ 50 pre-loaded books with real cover images
-- ✅ 6 categories (Fiction, Business, Technology, Wellness, Biography, History)
-- ✅ 3 test user accounts ready to use
+The application will start at:
+- HTTPS: https://localhost:5001
+- HTTP: http://localhost:5000
 
----
+## Default Users
 
-## 🔐 Test Accounts
+Create an admin user manually in MongoDB or through the registration page and change the role to "Admin".
 
-Use these pre-configured accounts to explore the system:
-
-| Role | Email | Password | Capabilities |
-|------|-------|----------|--------------|
-| 🔑 **Admin** | admin@lumenlibrary.com | admin123 | Full system access, manage books, approve bookings |
-| 👤 **Client** | maya@readers.com | reader123 | Browse catalog, reserve books, track bookings |
-| 👤 **Client** | leo@readers.com | reader123 | Browse catalog, reserve books, track bookings |
-
----
-
-## 📚 Pre-loaded Book Catalog
-
-The system includes **50 carefully selected books** across 6 categories:
-
-### 📖 Fiction (10 books)
-- The Great Gatsby, 1984, To Kill a Mockingbird, Pride and Prejudice, The Catcher in the Rye, Lord of the Flies, Animal Farm, Brave New World, Jane Eyre, Wuthering Heights
-
-### 💼 Business (8 books)
-- Think and Grow Rich, The Lean Startup, Good to Great, Zero to One, The 4-Hour Workweek, The E-Myth Revisited, Start with Why, The Hard Thing About Hard Things
-
-### 💻 Technology (7 books)
-- Clean Code, The Pragmatic Programmer, Design Patterns, You Don't Know JS, The Phoenix Project, Cracking the Coding Interview, Code Complete
-
-### 🧘 Wellness (7 books)
-- Atomic Habits, The Power of Now, How to Win Friends and Influence People, The 7 Habits of Highly Effective People, Mindset, Grit, The Subtle Art of Not Giving a F*ck
-
-### 👤 Biography (6 books)
-- Steve Jobs, Becoming, Long Walk to Freedom, The Diary of a Young Girl, Educated, Born a Crime
-
-### 🌍 History (6 books)
-- Sapiens, Guns Germs and Steel, The Silk Roads, A People's History of the United States, SPQR, 1776
-
-*All books feature real cover images hosted on Amazon for an authentic library experience.*
-
----
-
-## 🔄 Booking Workflow
-
-The system implements a sophisticated multi-state reservation process:
-
-```
-┌─────────────┐
-│   Client    │
-│  Reserves   │──────► Status: PENDING (Yellow)
-│    Book     │
-└─────────────┘
-       │
-       ▼
-┌─────────────────────────────┐
-│  Admin Reviews Request      │
-└─────────────────────────────┘
-       │
-       ├──── Approve ────► Status: APPROVED (Green)
-       │                  + Due Date Assigned
-       │                  + Client can borrow book
-       │
-       └──── Refuse ─────► Status: REFUSED (Red)
-                          + Request declined
-
-       │ (After borrowing period)
-       ▼
-┌─────────────────────────────┐
-│  Admin Marks as Returned    │──────► Status: COMPLETED (Blue)
-└─────────────────────────────┘        + Moves to History
+**To create an admin via MongoDB shell:**
+```javascript
+use LibraryDB
+db.Users.insertOne({
+    userId: 1,
+    username: "admin",
+    password: "admin123",
+    email: "admin@library.com",
+    role: "Admin",
+    registrationDate: new Date(),
+    adminLevel: "Super"
+})
 ```
 
-**Features:**
-- 📅 Custom due date assignment on approval
-- 🔴 Automatic overdue detection with visual alerts
-- 📊 Organized tracking (Pending, Approved, History tabs)
-- 🔔 Visual status indicators with color coding
-- ⏰ Timestamp tracking (requested, approved, returned dates)
-
----
-
-## 🏗️ Architecture & Design
-
-### Project Structure
+## Project Structure
 
 ```
 LibraryWebApp/
-├── 📁 Controllers/              # MVC Controllers
-│   ├── HomeController.cs        # Public landing page
-│   ├── AccountController.cs     # Login/Register/Logout
-│   ├── ClientController.cs      # Member portal (Browse, Reserve, MyBookings)
-│   └── AdminController.cs       # Admin portal (Dashboard, CRUD operations)
-│
-├── 📁 Models/                   # Domain Entities
-│   ├── User.cs                  # User entity with role
-│   ├── Book.cs                  # Book entity with metadata
-│   ├── Category.cs              # Category entity
-│   ├── Booking.cs               # Booking entity with status
-│   ├── BookingStatus.cs         # Enum (Pending, Approved, Refused, Completed)
-│   └── 📁 ViewModels/           # View-specific models
-│       ├── Account/             # Login/Register models
-│       ├── Admin/               # Admin dashboard models
-│       └── Client/              # Client portal models
-│
-├── 📁 Services/                 # Business Logic Layer
-│   ├── UserService.cs           # User management (register, auth)
-│   ├── BookService.cs           # Book CRUD + search
-│   ├── CategoryService.cs       # Category management
-│   └── BookingService.cs        # Booking workflow
-│
-├── 📁 Views/                    # Razor Views
-│   ├── 📁 Home/                 # Public pages
-│   ├── 📁 Account/              # Auth pages
-│   ├── 📁 Client/               # Member interface
-│   ├── 📁 Admin/                # Admin interface
-│   └── 📁 Shared/               # Layouts & partials
-│
-├── 📁 wwwroot/                  # Static Resources
-│   ├── 📁 css/                  # Custom styles
-│   ├── 📁 js/                   # JavaScript
-│   ├── 📁 lib/                  # Bootstrap, jQuery
-│   └── 📁 uploads/books/        # Book cover images
-│
-└── Program.cs                   # App configuration & startup
+├── Controllers/
+│   ├── AccountController.cs    # Authentication
+│   ├── AdminController.cs      # Admin operations
+│   ├── ClientController.cs     # Client operations
+│   └── HomeController.cs       # Home page
+├── Models/
+│   ├── User.cs                 # User model
+│   ├── Book.cs                 # Book model
+│   ├── Booking.cs              # Booking model
+│   ├── Category.cs             # Category model
+│   └── DatabaseSettings.cs     # MongoDB settings
+├── Services/
+│   ├── MongoDbService.cs       # MongoDB connection
+│   ├── UserService.cs          # User operations
+│   ├── BookService.cs          # Book operations
+│   ├── BookingService.cs       # Booking operations
+│   └── CategoryService.cs      # Category operations
+├── Views/
+│   ├── Account/                # Login, Register
+│   ├── Admin/                  # Admin views
+│   ├── Client/                 # Client views
+│   ├── Home/                   # Home page
+│   └── Shared/                 # Layout, shared views
+└── Program.cs                  # Application entry point
 ```
 
-### Layered Architecture
+## Usage Guide
 
-```
-┌─────────────────────────────────────────┐
-│     Presentation Layer                  │
-│  (Controllers + Razor Views)            │
-└─────────────────────────────────────────┘
-                  ↓
-┌─────────────────────────────────────────┐
-│     Business Logic Layer                │
-│  (Services: Book, User, Booking, etc.)  │
-└─────────────────────────────────────────┘
-                  ↓
-┌─────────────────────────────────────────┐
-│     Data Access Layer                   │
-│  (In-Memory Storage with Thread-Safety) │
-└─────────────────────────────────────────┘
-                  ↓
-┌─────────────────────────────────────────┐
-│     Domain Layer                        │
-│  (Models: Book, User, Booking, etc.)    │
-└─────────────────────────────────────────┘
-```
+### For Clients:
+1. Register an account
+2. Login with your credentials
+3. Browse or search for books
+4. Click "Book Now" to request a book
+5. View your bookings in "My Bookings"
+6. Wait for admin approval
 
-### Design Patterns Used
+### For Administrators:
+1. Login with admin credentials
+2. Access the admin dashboard
+3. Add/Edit/Delete books and categories
+4. Review pending booking requests
+5. Approve or decline bookings
+6. View all clients and bookings
 
-| Pattern | Implementation | Purpose |
-|---------|---------------|---------|
-| **MVC** | ASP.NET Core MVC | Separation of concerns |
-| **Singleton** | Service registration | Single shared instance per service |
-| **Repository** | Services act as repositories | Data access abstraction |
-| **ViewModel** | Dedicated view models | Decoupling domain from presentation |
-| **Dependency Injection** | Built-in DI container | Loose coupling & testability |
-| **Session State** | ASP.NET Core Sessions | Authentication & user context |
+## UML Diagrams
 
----
+The system design is based on:
+- **Class Diagram**: Located in `/PJ/CLASS DIAGRAM.png`
+- **Use Case Diagram**: Located in `/PJ/USE_CASE_DIAGRAM.png`
 
-## 🔒 Security Features
+## API Endpoints
 
-- ✅ **Session-based Authentication**: 30-minute idle timeout with secure HttpOnly cookies
-- ✅ **Role-based Authorization**: Separate access levels (Admin/Client) with route protection
-- ✅ **CSRF Protection**: Anti-forgery tokens on all POST forms
-- ✅ **Input Validation**: Server-side validation with Data Annotations
-- ✅ **Thread Safety**: Mutex locks on all shared data operations
-- ✅ **XSS Prevention**: Razor automatic HTML encoding
-- ✅ **Session Security**: Secure cookie configuration with SameSite policy
+### Account
+- `GET/POST /Account/Login` - User login
+- `GET/POST /Account/Register` - User registration
+- `GET /Account/Logout` - User logout
 
----
+### Client
+- `GET /Client/Index` - View available books
+- `GET /Client/Browse` - Browse all books
+- `GET /Client/Search` - Search books
+- `POST /Client/BookABook/{id}` - Book a book
+- `GET /Client/MyBookings` - View my bookings
 
-## 💻 Technology Stack
+### Admin
+- `GET /Admin/Index` - Admin dashboard
+- `GET /Admin/Books` - Manage books
+- `GET/POST /Admin/CreateBook` - Add new book
+- `GET/POST /Admin/EditBook/{id}` - Edit book
+- `POST /Admin/DeleteBook/{id}` - Delete book
+- `GET /Admin/Bookings` - View all bookings
+- `POST /Admin/ApproveBooking/{id}` - Approve booking
+- `POST /Admin/DeclineBooking/{id}` - Decline booking
 
-| Category | Technology | Version |
-|----------|-----------|---------|
-| **Framework** | ASP.NET Core MVC | 8.0 |
-| **Language** | C# | 12 |
-| **Template Engine** | Razor Pages | - |
-| **Frontend Framework** | Bootstrap | 5.3 |
-| **JavaScript Library** | jQuery | 3.x |
-| **Validation** | jQuery Validation | - |
-| **Storage** | MongoDB (local, `MongoDatabase` settings) | - |
-| **Authentication** | ASP.NET Sessions | - |
+## Troubleshooting
 
----
-
-## 🎨 UI/UX Features
-
-- 📱 **Fully Responsive**: Mobile-first design, works on phones, tablets, and desktops
-- 🎨 **Modern Card Layout**: Book grid with hover effects and shadows
-- 🌈 **Visual Status Indicators**: Color-coded badges (Yellow=Pending, Green=Approved, Red=Refused, Blue=Completed)
-- 🔍 **Instant Search**: Real-time filtering without page reload
-- 🎯 **Smart Navigation**: Breadcrumbs, organized tabs, clear CTAs
-- ✨ **Smooth Animations**: Transitions on hover and state changes
-- 🔔 **Toast Notifications**: Success/error messages with TempData
-- ⚠️ **Overdue Alerts**: Red badges for late returns
-- 🖼️ **Image Optimization**: Lazy loading for book covers
-- 🎨 **Consistent Theming**: Professional color scheme throughout
-
----
-
-## 📖 Documentation
-
-### Academic Report (French)
-
-Complete technical documentation available in `latexrappotr.md` (1100+ lines LaTeX):
-
-- 📐 **UML Diagrams**: Use Case, Class, Sequence diagrams (UML 2.5 compliant)
-- 🏗️ **Architecture**: Detailed explanation of MVC pattern and layered design
-- 💻 **Implementation**: Code examples and technical decisions
-- 🧪 **Testing**: Test scenarios and validation procedures
-- 🔮 **Future Work**: Planned enhancements and improvements
-- 📚 **Bibliography**: 18 academic and technical references
-
-**Generate PDF:**
+### MongoDB Connection Issues
 ```bash
-pdflatex latexrappotr.md
-pdflatex latexrappotr.md  # Run twice for TOC
+# Check if MongoDB is running
+sudo systemctl status mongod
+
+# Check MongoDB logs
+sudo tail -f /var/log/mongodb/mongod.log
 ```
 
----
+### Port Already in Use
+```bash
+# Change port in Properties/launchSettings.json
+# Or kill process using the port
+sudo lsof -i :5000
+sudo kill -9 <PID>
+```
 
-## 🚀 Future Enhancements
+## Future Enhancements
 
-### Phase 1: Production Readiness
-- [x] Database persistence (MongoDB)
-- [ ] Entity Framework Core integration
-- [ ] Password hashing (BCrypt/Argon2)
-- [ ] ASP.NET Core Identity for authentication
-- [ ] Logging with Serilog
+- [ ] Email notifications for booking approvals
+- [ ] Book reviews and ratings
+- [ ] Advanced search filters
+- [ ] Book recommendations
+- [ ] Return book functionality for clients
+- [ ] Fine payment system
+- [ ] Report generation
 
-### Phase 2: Advanced Features
-- [ ] Email notifications (booking approval, due date reminders)
-- [ ] Fine system for overdue books
-- [ ] Book recommendation engine
-- [ ] Advanced statistics dashboard with charts (Chart.js)
-- [ ] PDF/Excel report generation
+## License
 
-### Phase 3: API & Mobile
-- [ ] REST API for mobile apps
-- [ ] JWT authentication
-- [ ] Swagger/OpenAPI documentation
-- [ ] OAuth 2.0 social login
+This project is created for educational purposes.
 
-### Phase 4: UX Improvements
-- [ ] Multi-language support (i18n)
-- [ ] Dark mode theme
-- [ ] Book rating and reviews
-- [ ] Reading lists and favorites
-- [ ] Real-time notifications (SignalR)
+## Author
 
----
-
-## 🧪 Testing
-
-### Manual Test Scenarios
-
-1. **Authentication Flow**
-   - Register new account
-   - Login with valid credentials
-   - Login with invalid credentials
-   - Session timeout after 30 minutes
-   - Role-based access control
-
-2. **Booking Workflow**
-   - Client reserves available book
-   - Admin approves with due date
-   - Admin refuses reservation
-   - Admin marks book as returned
-   - Overdue detection
-
-3. **Book Management**
-   - Create book with image upload
-   - Edit book details
-   - Delete book
-   - Category assignment
-
-4. **Search & Browse**
-   - Search by title
-   - Search by author
-   - Filter by category
-   - Combine search + filter
-
----
-
-## 📝 Contributing
-
-This is an academic project for EMSI. Contributions, issues, and feature requests are welcome!
-
----
-
-## 📄 License
-
-This project is developed as part of an academic assignment for **EMSI** (École Marocaine Des Sciences De L'Ingénieur).
-
-**Academic Year**: 2024-2025  
-**Institution**: EMSI Morocco  
-**Course**: Software Engineering / Web Development
-
----
-
-## 👨‍💻 Author
-
-**Oussama Ouaanine**  
-📧 Email: [Contact via GitHub](https://github.com/Oussama-Ouaanine)  
-🎓 EMSI Student - Software Engineering  
-📅 Academic Year: 2024/2025
-
----
-
-## 🙏 Acknowledgments
-
-- **ASP.NET Core Team** for the excellent framework
-- **Bootstrap Team** for the responsive CSS framework
-- **EMSI** for the academic guidance and support
-- **Open Source Community** for inspiration and resources
-
----
-
-<div align="center">
-
-**⭐ If you find this project useful, please consider giving it a star! ⭐**
-
-Made with ❤️ using ASP.NET Core 8.0
-
-[Report Bug](https://github.com/Oussama-Ouaanine/DotNet/issues) · [Request Feature](https://github.com/Oussama-Ouaanine/DotNet/issues)
-
-</div>
+Library Management System
+Date: October 2025
