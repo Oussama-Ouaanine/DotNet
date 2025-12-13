@@ -109,7 +109,7 @@ La gestion efficace d'une bibliothèque requiert un système informatique robust
 
 Le système implémente un modèle de contrôle d'accès basé sur les rôles (RBAC), distinguant deux types d'utilisateurs : les \textbf{administrateurs} qui gèrent le catalogue et les réservations, et les \textbf{clients} (membres) qui peuvent consulter le catalogue et réserver des livres.
 
-L'application a été conçue pour être simple, performante et facile à maintenir, utilisant un stockage en mémoire pour les données et une architecture MVC claire séparant les préoccupations.
+L'application a été conçue pour être simple, performante et facile à maintenir, en s'appuyant désormais sur une persistance MongoDB (pilote officiel .NET) et une architecture MVC claire séparant les préoccupations.
 
 \subsection{Contexte du projet}
 
@@ -139,7 +139,7 @@ Les objectifs principaux de ce système sont :
   
   \item \textbf{Traçabilité} : Suivi complet de l'historique des réservations avec dates d'approbation, dates limites et retours.
   
-  \item \textbf{Performance} : Architecture en mémoire avec services singleton garantissant des temps de réponse rapides.
+  \item \textbf{Performance} : Architecture légère avec services singleton adossés à MongoDB, garantissant des réponses rapides et une persistance réelle.
 \end{itemize}
 
 % =============================================================================
@@ -385,7 +385,7 @@ LibraryWebApp/
 ]
   \node[layer, fill=blue!20] (presentation) at (0, 0) {\textbf{Couche Présentation} --- Controllers + Views (Razor)};
   \node[layer, fill=green!20] (business) at (0, -2) {\textbf{Couche Métier} --- Services (BookService, UserService, etc.)};
-  \node[layer, fill=orange!20] (data) at (0, -4) {\textbf{Couche Données} --- In-Memory Storage (List<T> + Locks)};
+  \node[layer, fill=orange!20] (data) at (0, -4) {\textbf{Couche Données} --- MongoDB (Collections)};
   \node[layer, fill=purple!20] (domain) at (0, -6) {\textbf{Couche Domaine} --- Models (Book, User, Booking, etc.)};
   
   \draw[arrow] (presentation.south) -- (business.north);
@@ -402,7 +402,7 @@ LibraryWebApp/
   \item Le routeur ASP.NET Core achemine vers le contrôleur approprié
   \item Le contrôleur vérifie l'authentification via la session
   \item Le contrôleur appelle les services métier nécessaires
-  \item Les services manipulent les données en mémoire (avec verrous thread-safe)
+  \item Les services manipulent les collections MongoDB via le driver officiel (.NET), avec filtres et index gérés par le serveur
   \item Le contrôleur construit un ViewModel et retourne une vue Razor
   \item La vue est rendue en HTML et envoyée au client
 \end{enumerate}
@@ -433,7 +433,7 @@ TikZ/LaTeX & --- & Génération de diagrammes UML \\
 \begin{itemize}
   \item \textbf{ASP.NET Core MVC} : Framework mature offrant une architecture MVC robuste, injection de dépendances native, et excellentes performances.
   
-  \item \textbf{Stockage en mémoire} : Choix délibéré pour simplifier le déploiement et garantir des temps de réponse ultra-rapides. Les données sont initialisées au démarrage de l'application via des méthodes de seeding.
+  \item \textbf{Persistance MongoDB} : Choix délibéré pour disposer d'un stockage persistant léger. Les données sont initialisées au démarrage via du seeding dans les collections MongoDB.
   
   \item \textbf{Services Singleton} : Pattern garantissant une instance unique partagée de chaque service, avec protection par verrous (locks) pour la thread-safety.
   
@@ -820,7 +820,7 @@ Ce diagramme illustre le scénario complet de réservation d'un livre par un cli
 
 \subsection{Gestion de la concurrence}
 
-Chaque service utilise un verrou (\texttt{lock}) pour garantir la thread-safety lors des opérations de lecture/écriture sur les collections en mémoire :
+Chaque service s'appuie sur MongoDB pour gérer la concurrence et la thread-safety côté base, les opérations se faisant via le driver officiel :
 
 \begin{lstlisting}
 public class BookingService
@@ -1118,7 +1118,7 @@ Le système répond aux objectifs initiaux en offrant :
   \item Un workflow de réservation robuste avec états multiples
   \item Une interface intuitive pour clients et administrateurs
   \item Un code maintenable et bien documenté
-  \item Des performances excellentes grâce au stockage en mémoire
+  \item Des performances solides avec un stockage persistant MongoDB et des requêtes filtrées
 \end{itemize}
 
 Ce projet constitue une base solide pouvant évoluer vers un système de production en intégrant les améliorations suggérées (base de données persistante, sécurité renforcée, API REST, notifications).

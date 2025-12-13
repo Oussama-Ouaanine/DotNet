@@ -259,7 +259,7 @@ LibraryWebApp/
 | **Frontend Framework** | Bootstrap | 5.3 |
 | **JavaScript Library** | jQuery | 3.x |
 | **Validation** | jQuery Validation | - |
-| **Storage** | In-Memory (List<T>) | - |
+| **Storage** | MongoDB (local, `MongoDatabase` settings) | - |
 | **Authentication** | ASP.NET Sessions | - |
 
 ---
@@ -303,7 +303,7 @@ pdflatex latexrappotr.md  # Run twice for TOC
 ## 🚀 Future Enhancements
 
 ### Phase 1: Production Readiness
-- [ ] Database persistence (MongoDB or SQL Server)
+- [x] Database persistence (MongoDB)
 - [ ] Entity Framework Core integration
 - [ ] Password hashing (BCrypt/Argon2)
 - [ ] ASP.NET Core Identity for authentication
