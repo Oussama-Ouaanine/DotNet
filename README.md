@@ -45,6 +45,15 @@ Follow these instructions to get a copy of the project up and running on your lo
    ```bash
    cd DotNet/LibraryWebApp
    ```
+
+### Database Setup
+Currently, the application is designed to be **plug-and-play** and uses **In-Memory Collections** via Singleton services for all its data storage. This means:
+- **No external database installation is required** to run the app.
+- All data (books, users, categories) are seeded in memory upon application start.
+- Any new items added or modifications made will be wiped when the server stops.
+
+*(Note: If you plan to deploy this for production, you must wire up Entity Framework Core or MongoDB in `Program.cs` and configure a persistent connection string in `appsettings.json`.)*
+
 3. Build the application:
    ```bash
    dotnet build
